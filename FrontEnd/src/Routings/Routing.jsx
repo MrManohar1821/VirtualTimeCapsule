@@ -79,7 +79,7 @@ export default function Routing() {
             <Route
               index
               element={
-                <div className="flex">
+                <div className="flex flex-col lg:flex-row">
                   <AdminDashboard />
                   <div className="flex-1 bg-gray-100 min-h-screen">
                     <Topbar />
@@ -91,7 +91,7 @@ export default function Routing() {
             <Route
               path="users"
               element={
-                <div className="flex">
+                <div className="flex flex-col lg:flex-row">
                   <AdminDashboard />
                   <div className="flex-1 bg-gray-100 min-h-screen">
                     <Topbar />
@@ -103,7 +103,7 @@ export default function Routing() {
             <Route
               path="capsules"
               element={
-                <div className="flex">
+                <div className="flex flex-col lg:flex-row">
                   <AdminDashboard />
                   <div className="flex-1 bg-gray-100 min-h-screen">
                     <Topbar />

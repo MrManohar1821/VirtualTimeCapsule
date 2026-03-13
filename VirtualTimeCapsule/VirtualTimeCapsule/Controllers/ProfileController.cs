@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using VirtualTimeCapsule.BusinessLayer;
 using VirtualTimeCapsule.Models;
 
@@ -107,7 +107,7 @@ namespace VirtualTimeCapsule.Controllers
                     LastName = request.LastName,
                     Email = request.Email,
                     Phone = request.Phone,
-                    ProfileImage = imagePath
+                    ProfileImage = imagePath ?? existingProfile.ProfileImage
                 };
 
                 bool result = bl.UpdateProfile(model);

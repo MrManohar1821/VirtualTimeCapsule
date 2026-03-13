@@ -1,232 +1,435 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { MdNotifications, MdDashboard, MdPeople, MdInventory, MdLogout, MdMenu, MdClose, MdEdit, MdDelete, MdCheck } from "react-icons/md";
+import { useEffect, useState, useRef } from "react";
+import {
+  MdNotifications, MdDashboard, MdPeople, MdInventory, MdLogout,
+  MdMenu, MdClose, MdEdit, MdDelete, MdCheck, MdChevronRight, MdSearch,
+  MdOutlineAccessTimeFilled
+} from "react-icons/md";
+import { motion, AnimatePresence } from "framer-motion";
 import logo from "../assets/logo.png";
 
 /* ================= UTIL ================= */
 const getStorage = (key, fallback = []) => {
   const raw = localStorage.getItem(key);
-  if (raw === null || raw === undefined) {
-    return fallback;
-  } 
-
+  if (!raw) return fallback;
   try {
-    const parsed = JSON.parse(raw);
-    return parsed || fallback;  
+    return JSON.parse(raw) || fallback;
   } catch (err) {
-    console.warn(`getStorage: failed to parse key ${key}`, raw, err);
     return fallback;
   }
 };
 
-/* ================= SIDEBAR ================= */
+const getUserId = () => {
+  const user = getStorage("user", null);
+  return user?.id || user?.userId || user?.UserId;
+};
+
+/* ================= SIDEBAR COMPONENT ================= */
 export function AdminDashboard() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [active, setActive] = useState(window.location.pathname);
+
+  const links = [
+    { label: "Dashboard", icon: <MdDashboard size={22} />, path: "/admin" },
+    { label: "Users", icon: <MdPeople size={22} />, path: "/admin/users" },
+    { label: "Capsules", icon: <MdInventory size={22} />, path: "/admin/capsules" },
+  ];
 
   const logout = () => {
     localStorage.removeItem("user");
     navigate("/");
   };
 
-  const links = [
-    { label: "Dashboard", icon: <MdDashboard size={20} />, path: "/admin" },
-    { label: "Users", icon: <MdPeople size={20} />, path: "/admin/users" },
-    { label: "Capsules", icon: <MdInventory size={20} />, path: "/admin/capsules" },
-  ];
-
   return (
     <>
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex lg:w-64 xl:w-72 min-h-screen bg-gradient-to-b from-emerald-700 to-emerald-800 text-white lg:p-4 xl:p-6 font-serif font-bold shadow-2xl flex-col transition-all duration-300 ease-out fixed left-0 top-0 z-40">
-        <div className="mb-6 lg:mb-10 flex items-center justify-between gap-2 lg:gap-3 bg-white rounded-lg p-2 lg:p-3 shadow-lg">
-          <div className="flex-1 min-w-0">
-            <h1 className="text-base lg:text-md xl:text-2xl font-bold text-emerald-700 truncate"> Time Capsule</h1>
+      {/* Mobile Top Header (Minimized for space) */}
+      <div className="lg:hidden flex items-center justify-between bg-white/80 backdrop-blur-md px-4 h-16 shadow-sm sticky top-0 z-50">
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 rounded-full bg-[#9dd1b1] flex items-center justify-center p-1 shadow-md border border-white">
+            <img src={logo} alt="logo" className="w-7 h-7 rounded-full bg-[#025622] object-cover" />
           </div>
-          <div className="w-12 lg:w-14 h-12 lg:h-14 rounded-full bg-gradient-to-br from-[#9dd1b1] to-[#025622] flex items-center justify-center flex-shrink-0 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-110">
-            <img 
-              src={logo} 
-              alt="logo" 
-              className="w-10 lg:w-12 h-10 lg:h-12 rounded-full object-cover"
-            />
-          </div>
+          <span className="font-serif font-black text-emerald-800 text-xs tracking-tight">ADMIN PANEL</span>
         </div>
-        <ul className="flex flex-col gap-2 lg:gap-3 flex-1">
-          {links.map((link) => (
-            <li
-              key={link.path}
-              className={`flex items-center gap-2 lg:gap-3 px-3 lg:px-4 py-2 lg:py-3 rounded-lg cursor-pointer transition-all duration-300 ease-out transform text-sm lg:text-base ${
-                active === link.path 
-                  ? "bg-emerald-600 shadow-lg lg:scale-105" 
-                  : "hover:bg-emerald-600/70 hover:lg:translate-x-1"
-              }`}
-              onClick={() => {
-                navigate(link.path);
-                setActive(link.path);
-              }}
-            >
-              <span className="transition-transform duration-300 flex-shrink-0">{link.icon}</span>
-              <span className="truncate">{link.label}</span>
-            </li>
-          ))}
-        </ul>
-        <button
-          onClick={logout}
-          className="flex items-center gap-2 lg:gap-3 text-red-200 hover:text-red-100 hover:bg-red-600/20 px-3 lg:px-4 py-2 lg:py-3 rounded-lg cursor-pointer transition-all duration-300 ease-out transform hover:lg:translate-x-1 mt-auto text-sm lg:text-base"
-        >
-          <MdLogout size={20} /> <span className="truncate">Logout</span>
-        </button>
-      </aside>
-
-      {/* Desktop Content Offset */}
-      <div className="hidden lg:block lg:w-64 xl:w-72" />
-
-      {/* Mobile Hamburger */}
-      <div className="lg:hidden fixed top-3 right-3 sm:top-4 sm:right-4 z-50 transition-all duration-300">
         <button
           onClick={() => setSidebarOpen(true)}
-          className="p-2 sm:p-3 bg-emerald-700 text-white rounded-lg shadow-lg hover:bg-emerald-800 active:scale-95 transition-all duration-200"
+          className="p-2 text-emerald-700 hover:bg-emerald-50 rounded-xl transition-colors"
         >
-          <MdMenu size={24} />
+          <MdMenu size={28} />
         </button>
       </div>
 
-      {/* Mobile Sidebar with Smooth Animation (always rendered, toggles classes for smooth transition) */}
-      <div className={`mobile-overlay fixed inset-0 z-50 flex justify-start ${sidebarOpen ? 'open' : 'closed'}`}>
-        <style>{`
-          .mobile-overlay { transition: opacity 280ms ease, visibility 280ms ease; }
-          .mobile-overlay.closed { opacity: 0; visibility: hidden; pointer-events: none; }
-          .mobile-overlay.open { opacity: 1; visibility: visible; pointer-events: auto; }
-
-          .mobile-backdrop { background: rgba(0,0,0,0.42); backdrop-filter: blur(6px); transition: opacity 280ms ease; }
-          .mobile-backdrop.closed { opacity: 0; }
-          .mobile-backdrop.open { opacity: 1; }
-
-          .mobile-sidebar { transform: translateX(-100%); transition: transform 320ms cubic-bezier(.2,.9,.2,1); }
-          .mobile-sidebar.open { transform: translateX(0); }
-        `}</style>
-
-        {/* Backdrop */}
-        <div
-          className={`fixed inset-0 mobile-backdrop ${sidebarOpen ? 'open' : 'closed'}`}
-          onClick={() => setSidebarOpen(false)}
-        />
-
-        {/* Sidebar panel */}
-        <aside className={`relative bg-gradient-to-b from-emerald-700 to-emerald-800 w-64 sm:w-72 h-full p-4 sm:p-6 flex flex-col text-white shadow-2xl mobile-sidebar ${sidebarOpen ? 'open' : ''}`}>
-          <button
+      {/* Sidebars (Shared Logic) */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             onClick={() => setSidebarOpen(false)}
-            aria-label="Close sidebar"
-            className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-white p-1.5 sm:p-2 rounded-full shadow-md transition-all duration-200 active:scale-95 z-50"
-          >
-            <MdClose size={20} className="text-emerald-700" />
-          </button>
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] lg:hidden"
+          />
+        )}
+      </AnimatePresence>
 
-          <div className="mb-6 sm:mb-10 mt-4 flex items-center justify-between gap-2 sm:gap-3 bg-white rounded-lg py-3 px-3 sm:py-3 sm:px-4 pr-10 sm:pr-12 shadow-lg">
-            <div className="flex-1 min-w-0">
-              <h1 className="text-sm sm:text-lg md:text-xl font-bold text-emerald-700 whitespace-normal leading-tight">DIGITAL TIME CAPSULE</h1>
+      <motion.aside
+        initial={false}
+        animate={{
+          x: sidebarOpen ? 0 : (window.innerWidth < 1024 ? "-100%" : 0),
+          transition: { type: "spring", damping: 25, stiffness: 200 }
+        }}
+        className={`fixed inset-y-0 left-0 w-72 bg-emerald-950/80 backdrop-blur-xl border-r border-white/10 text-white z-[70] lg:z-40 flex flex-col shadow-2xl overflow-hidden`}
+      >
+        {/* Sidebar Header */}
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-[#9dd1b1] flex items-center justify-center p-2 shadow-xl shadow-emerald-900/40 border border-white/20">
+                <img src={logo} alt="logo" className="w-8 h-8 rounded-full bg-[#025622] object-cover" />
+              </div>
+              <div className="flex flex-col">
+                <h1 className="text-xl font-black font-serif text-white leading-tight">ADMIN</h1>
+                <p className="text-[10px] text-emerald-300 font-bold tracking-widest uppercase opacity-70">Control Panel</p>
+              </div>
             </div>
-            <div className="flex-shrink-0 ml-3 w-12 sm:w-14 h-12 sm:h-14 rounded-full bg-gradient-to-br from-[#9dd1b1] to-[#025622] flex items-center justify-center shadow-md">
-              <img 
-                src={logo} 
-                alt="logo" 
-                className="w-10 sm:w-12 h-10 sm:h-12 rounded-full object-cover"
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden p-2 hover:bg-white/10 rounded-full transition-colors"
+            >
+              <MdClose size={24} />
+            </button>
+          </div>
+
+          <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent mb-8" />
+
+          {/* Nav Links */}
+          <nav className="space-y-2">
+            {links.map((link) => {
+              const isActive = active === link.path;
+              return (
+                <button
+                  key={link.path}
+                  onClick={() => {
+                    navigate(link.path);
+                    setActive(link.path);
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all duration-300 group ${isActive
+                    ? "bg-emerald-600 shadow-lg shadow-emerald-950/50 text-white translate-x-1"
+                    : "text-emerald-100 hover:bg-white/5 hover:translate-x-1"
+                    }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <span className={`transition-colors duration-300 ${isActive ? "text-white" : "text-emerald-400 group-hover:text-white"}`}>
+                      {link.icon}
+                    </span>
+                    <span className="font-bold text-sm tracking-wide">{link.label}</span>
+                  </div>
+                  {isActive && <MdChevronRight size={20} className="text-emerald-300" />}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Sidebar Footer (Profile Recap) */}
+        <div className="mt-auto p-6 space-y-4">
+          <div className="bg-white/5 rounded-[1.5rem] p-4 flex items-center gap-4 border border-white/5 shadow-inner">
+            {JSON.parse(localStorage.getItem("adminProfile"))?.profileImage ? (
+              <img
+                src={`/${JSON.parse(localStorage.getItem("adminProfile")).profileImage}`}
+                alt="admin"
+                className="w-10 h-10 rounded-xl object-cover shadow-lg"
               />
+            ) : (
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-emerald-950 font-black shadow-lg uppercase">
+                {JSON.parse(localStorage.getItem("user"))?.firstName?.charAt(0) || "A"}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-black text-white truncate">Administrator</p>
+              <p className="text-[10px] font-medium text-emerald-400 uppercase tracking-widest truncate">Active System</p>
             </div>
           </div>
 
-          <ul className="flex flex-col gap-2 sm:gap-3 flex-1">
-            {links.map((link) => (
-              <li
-                key={link.path}
-                className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-lg cursor-pointer transition-all duration-300 ease-out text-sm sm:text-base ${
-                  active === link.path 
-                    ? "bg-emerald-600 shadow-lg" 
-                    : "hover:bg-emerald-600/70"
-                }`}
-                onClick={() => {
-                  navigate(link.path);
-                  setActive(link.path);
-                  setSidebarOpen(false);
-                }}
-              >
-                <span className="transition-transform duration-300 flex-shrink-0">{link.icon}</span>
-                <span className="truncate">{link.label}</span>
-              </li>
-            ))}
-          </ul>
-
           <button
-            onClick={() => {
-              logout();
-              setSidebarOpen(false);
-            }}
-            className="flex items-center gap-2 sm:gap-3 text-red-200 hover:text-red-100 hover:bg-red-600/20 px-3 sm:px-4 py-2 sm:py-3 rounded-lg cursor-pointer transition-all duration-300 mt-auto w-full text-sm sm:text-base"
+            onClick={logout}
+            className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-red-200 hover:bg-red-500/10 hover:text-red-100 transition-all duration-300 border border-transparent hover:border-red-500/20"
           >
-            <MdLogout size={20} /> <span className="truncate">Logout</span>
+            <MdLogout size={22} />
+            <span className="font-bold text-sm">Sign Out</span>
           </button>
-        </aside>
-      </div>
+        </div>
+      </motion.aside>
+
+      {/* Desktop Main Layout Helper */}
+      <div className="hidden lg:block lg:w-72 flex-shrink-0" />
     </>
   );
 }
 
-/* ================= TOPBAR + ALERT ================= */
+/* ================= TOPBAR COMPONENT ================= */
 export function Topbar() {
   const [alert, setAlert] = useState(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [adminProfile, setAdminProfile] = useState(() => getStorage("adminProfile", {}));
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [profileForm, setProfileForm] = useState({ phone: "", image: null });
+
+  const fetchProfile = async () => {
+    const uid = getUserId();
+    if (!uid) return;
+    try {
+      const response = await fetch(`/api/Profile/user/${uid}`);
+      if (response.ok) {
+        const data = await response.json();
+        setAdminProfile(data);
+        localStorage.setItem("adminProfile", JSON.stringify(data));
+        setProfileForm(prev => ({ ...prev, phone: data.phone || "" }));
+      }
+    } catch (err) { console.error(err); }
+  };
 
   useEffect(() => {
+    fetchProfile();
     const interval = setInterval(() => {
       const alerts = getStorage("adminAlerts");
       if (alerts.length > 0) {
         setAlert(alerts[0]);
         localStorage.setItem("adminAlerts", JSON.stringify(alerts.slice(1)));
-        setTimeout(() => setAlert(null), 4000);
+        setTimeout(() => setAlert(null), 5000);
       }
-    }, 1000);
-
+    }, 2000);
     return () => clearInterval(interval);
   }, []);
 
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    setIsUpdating(true);
+    const user = getStorage("user", {});
+    const uid = getUserId();
+
+    if (!uid) {
+      alert("System error: User session not found.");
+      setIsUpdating(false);
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("UserId", uid);
+    formData.append("FirstName", user.firstName || adminProfile.firstName || "Admin");
+    formData.append("LastName", user.lastName || adminProfile.lastName || "");
+    formData.append("Email", user.email || adminProfile.email || "");
+    formData.append("Phone", profileForm.phone);
+    if (profileForm.image) formData.append("Image", profileForm.image);
+
+    if (profileForm.phone && profileForm.phone.length !== 10) {
+      alert("Phone number must be exactly 10 digits");
+      setIsUpdating(false);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/Profile/update", {
+        method: "PUT",
+        body: formData
+      });
+      if (res.ok) {
+        await fetchProfile();
+        setProfileOpen(false);
+      }
+    } catch (err) { console.error(err); }
+    finally { setIsUpdating(false); }
+  };
+
   return (
     <>
-      <div className="h-14 sm:h-16 lg:h-14 bg-gradient-to-r from-emerald-600 to-emerald-700 shadow-lg flex items-center px-3 sm:px-4 md:px-6 lg:px-8 font-semibold text-white sticky top-0 z-40 transition-all duration-300 lg:ml-0">
-        <span className="text-xs sm:text-sm md:text-base lg:text-lg truncate font-serif font-bold">Admin Panel</span>
-      </div>
+      {/* Profile Modal */}
+      <AnimatePresence>
+        {profileOpen && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-emerald-950/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white rounded-[2.5rem] w-full max-w-md shadow-2xl border border-emerald-50 overflow-hidden">
+              <div className="p-8 border-b border-emerald-50">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-2xl font-black text-emerald-950 font-serif">Update <span className="text-emerald-600">Profile</span></h3>
+                  <button onClick={() => setProfileOpen(false)} className="p-2 hover:bg-emerald-50 rounded-xl transition-colors"><MdClose size={24} className="text-emerald-900" /></button>
+                </div>
+                <form onSubmit={handleUpdateProfile} className="space-y-6">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="relative group cursor-pointer" onClick={() => document.getElementById('profileImgInput').click()}>
+                      <div className="w-24 h-24 rounded-[2rem] bg-emerald-50 border-2 border-emerald-100 flex items-center justify-center overflow-hidden shadow-inner group-hover:border-emerald-300 transition-all">
+                        {profileForm.image ? (
+                          <img src={URL.createObjectURL(profileForm.image)} className="w-full h-full object-cover" />
+                        ) : adminProfile.profileImage ? (
+                          <img src={`/${adminProfile.profileImage}`} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-3xl font-serif font-black text-emerald-300">{adminProfile.firstName?.charAt(0) || "A"}</span>
+                        )}
+                      </div>
+                      <div className="absolute inset-0 bg-emerald-950/40 rounded-[2rem] opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                        <MdEdit size={24} className="text-white" />
+                      </div>
+                    </div>
+                    <input id="profileImgInput" type="file" className="hidden" accept="image/*" onChange={(e) => setProfileForm({ ...profileForm, image: e.target.files[0] })} />
+                    <p className="text-[10px] font-black text-emerald-900/40 uppercase tracking-widest">Click to change photo</p>
+                  </div>
 
-      {/* Alert with Smooth Animation */}
-      {alert && (
-        <div className="fixed top-16 sm:top-20 md:top-20 lg:top-14 right-2 sm:right-3 md:right-4 lg:right-6 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 rounded-lg shadow-2xl z-50 flex items-center gap-2 transform transition-all duration-300 animate-in slide-in-from-top max-w-xs sm:max-w-sm lg:max-w-md mx-1 sm:mx-2">
-          <MdNotifications size={18} className="flex-shrink-0 hidden sm:block" />
-          <MdNotifications size={16} className="flex-shrink-0 sm:hidden" />
-          <span className="text-xs sm:text-sm lg:text-base line-clamp-2">
-            Capsule unlocked for <b>{alert.user}</b>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-emerald-900/40 uppercase tracking-widest">Phone Number</label>
+                    <input
+                      type="text"
+                      value={profileForm.phone}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                        setProfileForm({ ...profileForm, phone: val });
+                      }}
+                      placeholder="e.g., 9876543210"
+                      className="w-full bg-emerald-50/50 border border-emerald-100 rounded-2xl py-3 px-4 text-sm font-bold text-emerald-950 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                    />
+                  </div>
+
+                  <button
+                    disabled={isUpdating}
+                    className="w-full bg-emerald-600 text-white font-black py-4 rounded-2xl shadow-xl shadow-emerald-600/30 hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    {isUpdating ? "Updating..." : "Save Changes"}
+                  </button>
+                </form>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <header className="h-16 lg:h-20 bg-white/80 backdrop-blur-md border-b border-emerald-50 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-30 transition-all duration-300">
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg lg:text-xl font-black text-emerald-900 font-serif hidden sm:block">
+            Manage <span className="text-emerald-600">Overview</span>
+          </h2>
+          <span className="hidden md:inline-flex items-center px-4 py-1.5 bg-white border-2 border-emerald-100 rounded-xl text-xs font-black text-emerald-800 tracking-widest uppercase">
+            [ {JSON.parse(localStorage.getItem("user"))?.firstName || "ADMIN"} ]
           </span>
         </div>
-      )}
+
+        <div className="flex items-center gap-4">
+          <div className="flex flex-col items-end mr-2">
+            <span className="text-sm font-black text-emerald-900 leading-none">Administrator</span>
+            <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Active System</span>
+          </div>
+          <button
+            onClick={() => setProfileOpen(true)}
+            className="group relative w-12 h-12 rounded-2xl bg-[#9dd1b1] flex items-center justify-center shadow-lg border-2 border-white hover:scale-105 transition-all active:scale-95 overflow-hidden"
+          >
+            {adminProfile.profileImage ? (
+              <img src={`/${adminProfile.profileImage}`} alt="profile" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-lg font-black text-[#025622]">
+                {JSON.parse(localStorage.getItem("user"))?.firstName?.charAt(0) || "A"}
+              </span>
+            )}
+            <div className="absolute inset-0 bg-emerald-950/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+              <MdEdit className="text-white" size={18} />
+            </div>
+          </button>
+        </div>
+      </header>
+
+      {/* Notifications Portal */}
+      <AnimatePresence>
+        {alert && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, x: 20 }}
+            animate={{ opacity: 1, y: 0, x: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="fixed top-4 right-4 sm:top-24 sm:right-8 bg-emerald-900 text-white p-4 rounded-2xl shadow-2xl z-[80] flex items-center gap-4 border border-emerald-700/50 max-w-[calc(100vw-2rem)] sm:max-w-md pointer-events-auto"
+          >
+            <div className="w-10 h-10 rounded-xl bg-emerald-800 flex items-center justify-center text-emerald-300 shadow-inner">
+              <MdNotifications size={24} className="animate-bounce" />
+            </div>
+            <div className="flex-1">
+              <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-0.5">System Alert</p>
+              <p className="text-sm font-bold text-emerald-50 leading-tight">
+                Capsule unlocked for user <span className="text-emerald-300">@{alert.user}</span>
+              </p>
+            </div>
+            <button onClick={() => setAlert(null)} className="p-1 hover:bg-white/10 rounded-lg transition-colors">
+              <MdClose size={20} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
 
 /* ================= DASHBOARD ================= */
 export function Dashboard() {
-  const users = getStorage("users");
-  const capsules = getStorage("capsules");
-  const locked = capsules.filter(c => c.status === "Locked").length;
-  const opened = capsules.filter(c => c.status === "Opened").length;
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalCapsules: 0,
+    lockedCapsules: 0,
+    openedCapsules: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch("/api/DashboardStatics/counts");
+        const data = await response.json();
+        // Handle both PascalCase and camelCase from backend
+        setStats({
+          totalUsers: data.totalUsers ?? data.TotalUsers ?? 0,
+          totalCapsules: data.totalCapsules ?? data.TotalCapsules ?? 0,
+          lockedCapsules: data.lockedCapsules ?? data.LockedCapsules ?? 0,
+          openedCapsules: data.openedCapsules ?? data.OpenedCapsules ?? 0
+        });
+      } catch (error) {
+        console.error("Error fetching dashboard statistics:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
 
   return (
-    <div className="min-h-screen pt-14 sm:pt-16  bg-[#f2eee3] transition-all duration-300 lg:ml-0">
-      <div className="p-3 sm:p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
-        <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-emerald-700 mb-4 sm:mb-6 md:mb-8">Dashboard Overview</h2>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
-          <Stat title="Users" value={users.length} color="from-green-300 to-green-600" />
-          <Stat title="Total Capsules" value={capsules.length} color="from-green-300 to-green-600" />
-          <Stat title="Locked" value={locked} color="from-green-300 to-green-600" />
-          <Stat title="Opened" value={opened} color="from-green-300 to-green-600" />
-        </div>
+    <div className="min-h-[calc(100vh-5rem)] bg-[#fdfaf5] transition-all duration-300">
+      <div className="p-4 sm:p-8 lg:p-12 max-w-7xl mx-auto">
+        <header className="mb-10 sm:mb-14">
+          <motion.h2
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="text-3xl sm:text-4xl lg:text-5xl font-black text-emerald-950 font-serif leading-tight"
+          >
+            Dashboard <span className="block sm:inline text-emerald-600">Statistics</span>
+          </motion.h2>
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: "4rem" }}
+            className="h-1.5 bg-emerald-600 rounded-full mt-4"
+          />
+        </header>
+
+        <motion.div
+          variants={container}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8"
+        >
+          <Stat title="Total Users" value={stats.totalUsers} icon={<MdPeople size={28} />} delay={0.1} />
+          <Stat title="Total Capsules" value={stats.totalCapsules} icon={<MdInventory size={28} />} delay={0.2} />
+          <Stat title="Locked Status" value={stats.lockedCapsules} icon={<MdDashboard size={28} />} delay={0.3} />
+          <Stat title="Opened Content" value={stats.openedCapsules} icon={<MdCheck size={28} />} delay={0.4} />
+        </motion.div>
       </div>
     </div>
   );
@@ -236,429 +439,566 @@ export function Dashboard() {
 export function Users() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editingIndex, setEditingIndex] = useState(null);
-  const [editValues, setEditValues] = useState({ firstName: "", lastName: "", email: "" });
+  // confirmTarget: { userId, name } or null
+  const [confirmTarget, setConfirmTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // helpers for editing/deleting
-  const saveUsers = (list) => {
-    setUsers(list);
-    localStorage.setItem("users", JSON.stringify(list));
-  };
-
-  const handleDelete = (idx) => {
-    if (confirm("Are you sure you want to delete this user?")) {
-      const updated = [...users];
-      updated.splice(idx, 1);
-      saveUsers(updated);
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/DashboardStatics/UserInfo");
+      const data = await response.json();
+      // Handle both camelCase and PascalCase from backend
+      setUsers(data.map(u => ({
+        userId: u.userId ?? u.UserId,
+        firstName: u.firstName ?? u.FirstName ?? "",
+        lastName: u.lastName ?? u.LastName ?? "",
+        email: u.email ?? u.Email ?? "",
+        totalCapsules: u.totalCapsules ?? u.TotalCapsules ?? 0
+      })));
+    } catch (error) {
+      console.error("Error loading users:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const startEdit = (idx) => {
-    setEditingIndex(idx);
-    setEditValues({ ...users[idx] });
+  useEffect(() => { loadUsers(); }, []);
+
+  const confirmDelete = (user) => {
+    setConfirmTarget(user);
   };
 
-  const cancelEdit = () => {
-    setEditingIndex(null);
+  const cancelDelete = () => {
+    setConfirmTarget(null);
   };
 
-  const applyEdit = () => {
-    const updated = [...users];
-    updated[editingIndex] = { ...editValues };
-    saveUsers(updated);
-    setEditingIndex(null);
-  };
-
-  const onChangeValue = (field, value) => {
-    setEditValues((prev) => ({ ...prev, [field]: value }));
-  };
-
-  useEffect(() => {
-    const loadUsers = () => {
-      const raw = localStorage.getItem("users");
-      console.log("[Users] raw localStorage users:", raw);
-      try {
-        const fetchedUsers = getStorage("users", []);
-      setUsers(fetchedUsers);
-      } catch (error) {
-        console.error("Error loading users:", error);
-      } finally {
-        setLoading(false);
+  const executeDelete = async () => {
+    if (!confirmTarget) return;
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/DashboardStatics/DeleteUser/${confirmTarget.userId}`, {
+        method: "DELETE"
+      });
+      if (response.ok) {
+        setUsers(prev => prev.filter(u => u.userId !== confirmTarget.userId));
+      } else {
+        console.error("Failed to delete user.");
       }
-    };
+    } catch (error) {
+      console.error("Error deleting user:", error);
+    } finally {
+      setDeleting(false);
+      setConfirmTarget(null);
+    }
+  };
 
-    loadUsers();
-
-    // Listen for storage changes (updates from other tabs/windows)
-    const handleStorageChange = () => {
-      loadUsers();
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
+  // Avatar color from first letter
+  const getAvatarColor = (name = "") => {
+    const colors = [
+      "from-emerald-400 to-emerald-600",
+      "from-teal-400 to-teal-600",
+      "from-cyan-400 to-cyan-600",
+      "from-green-400 to-green-600",
+    ];
+    return colors[(name.charCodeAt(0) || 0) % colors.length];
+  };
 
   return (
-    <div className="min-h-screen pt-14 sm:pt-16 lg:pt-20 bg-[#f2eee3] transition-all duration-300 lg:ml-0">
-      <div className="p-3 sm:p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
-        {/* Header with Count */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6">
-          <div className="mb-3 sm:mb-0">
-            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-emerald-700 mb-1 sm:mb-2">Registered Users</h2>
-            <p className="text-xs sm:text-sm text-gray-600">Total: <span className="font-bold text-emerald-600">{users.length}</span> users</p>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="min-h-screen bg-[#fdfaf5]"
+    >
+      {/* Confirm Delete Modal */}
+      <AnimatePresence>
+        {confirmTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm px-4"
+          >
+            <motion.div
+              initial={{ scale: 0.85, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.85, opacity: 0, y: 20 }}
+              transition={{ type: "spring", damping: 20, stiffness: 300 }}
+              className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl shadow-black/20 border border-red-50"
+            >
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-5 text-red-500">
+                <MdDelete size={32} />
+              </div>
+              <h3 className="text-xl font-black text-emerald-950 font-serif text-center mb-2">Delete User?</h3>
+              <p className="text-center text-emerald-900/50 text-sm font-medium mb-1">
+                <span className="font-black text-emerald-700">{confirmTarget.firstName}</span>
+              </p>
+              <p className="text-center text-emerald-900/40 text-xs mb-8">
+                All capsules and memories will be permanently removed.
+              </p>
+              <div className="flex gap-3">
+                <button onClick={cancelDelete} className="flex-1 py-3.5 rounded-2xl border-2 border-emerald-100 text-emerald-700 font-black hover:bg-emerald-50 transition-all duration-200">Cancel</button>
+                <button onClick={executeDelete} disabled={deleting} className="flex-1 py-3.5 rounded-2xl bg-red-500 hover:bg-red-600 text-white font-black transition-all duration-200 active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2">
+                  {deleting ? <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" /> : <><MdDelete size={18} /> Delete</>}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-30 bg-[#fdfaf5]/95 backdrop-blur-md px-4 sm:px-8 lg:px-12 py-6 border-b border-emerald-50 shadow-sm shadow-emerald-900/5">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-3xl sm:text-4xl font-black text-emerald-950 font-serif leading-tight">
+              User <span className="text-emerald-600">Management</span>
+            </h2>
+            <div className="h-1.5 w-16 bg-emerald-600 rounded-full mt-2" />
           </div>
-          <div className="hidden sm:flex items-center justify-center w-16 sm:w-20 lg:w-24 h-16 sm:h-20 lg:h-24 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-full shadow-lg flex-shrink-0">
-            <span className="text-2xl sm:text-3xl lg:text-4xl font-bold">{users.length}</span>
+
+          {/* Search Bar */}
+          <div className="relative flex-1 max-w-md mx-auto md:mx-0">
+            <MdSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-400" size={20} />
+            <input
+              type="text"
+              placeholder="Search by ID, email, or name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-white border border-emerald-100 rounded-2xl py-3 pl-12 pr-4 text-sm font-medium text-emerald-950 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-sm shadow-emerald-900/5"
+            />
           </div>
         </div>
-        
-        {/* Desktop Table View */}
-        {users.length > 0 ? (
-          <div className="hidden sm:block bg-white shadow-lg rounded-lg overflow-hidden transition-all duration-300 hover:shadow-2xl">
-            {/* hide scrollbar permanently */}
-            <div className="overflow-x-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-              <table className="w-full">
-                <thead className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white sticky top-0">
-                  <tr>
-                    <th className="px-2 sm:px-3 md:px-4 lg:px-6 py-3 md:py-4 text-left font-semibold text-xs sm:text-sm md:text-base">#</th>
-                    <th className="px-2 sm:px-3 md:px-4 lg:px-6 py-3 md:py-4 text-left font-semibold text-xs sm:text-sm md:text-base">First Name</th>
-                    <th className="px-2 sm:px-3 md:px-4 lg:px-6 py-3 md:py-4 text-left font-semibold text-xs sm:text-sm md:text-base">Last Name</th>
-                    <th className="px-2 sm:px-3 md:px-4 lg:px-6 py-3 md:py-4 text-left font-semibold text-xs sm:text-sm md:text-base">Email</th>
-                    <th className="px-2 sm:px-3 md:px-4 lg:px-6 py-3 md:py-4 text-center font-semibold text-xs sm:text-sm md:text-base">Edit</th>
-                    <th className="px-2 sm:px-3 md:px-4 lg:px-6 py-3 md:py-4 text-center font-semibold text-xs sm:text-sm md:text-base">Delete</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((u, i) => (
-                    <tr 
-                      key={i} 
-                      className="border-t border-gray-200 hover:bg-emerald-50 transition-all duration-200 transform hover:translate-x-1 relative"
-                    >
-                      <td className="px-2 sm:px-3 md:px-4 lg:px-6 py-3 md:py-4 text-slate-700 font-semibold text-xs sm:text-sm md:text-base">{i + 1}</td>
-                      <td className="px-2 sm:px-3 md:px-4 lg:px-6 py-3 md:py-4 text-slate-800 font-medium text-xs sm:text-sm md:text-base truncate">
-                        {editingIndex === i ? (
-                          <span
-                            contentEditable
-                            suppressContentEditableWarning
-                            onBlur={(e) => onChangeValue("firstName", e.currentTarget.textContent || "")}
-                            className="inline-block w-full px-2 py-1 border border-gray-300 rounded text-xs sm:text-sm"
-                          >
-                            {editValues.firstName}
-                          </span>
-                        ) : (
-                          u.firstName
-                        )}
-                      </td>
-                      <td className="px-2 sm:px-3 md:px-4 lg:px-6 py-3 md:py-4 text-slate-800 font-medium text-xs sm:text-sm md:text-base truncate">
-                        {editingIndex === i ? (
-                          <span
-                            contentEditable
-                            suppressContentEditableWarning
-                            onBlur={(e) => onChangeValue("lastName", e.currentTarget.textContent || "")}
-                            className="inline-block w-full px-2 py-1 border border-gray-300 rounded text-xs sm:text-sm"
-                          >
-                            {editValues.lastName}
-                          </span>
-                        ) : (
-                          u.lastName
-                        )}
-                      </td>
-                      <td className="px-2 sm:px-3 md:px-4 lg:px-6 py-3 md:py-4 text-slate-600 text-xs sm:text-sm md:text-base break-all">
-                        {editingIndex === i ? (
-                          <span
-                            contentEditable
-                            suppressContentEditableWarning
-                            onBlur={(e) => onChangeValue("email", e.currentTarget.textContent || "")}
-                            className="inline-block w-full px-2 py-1 border border-gray-300 rounded text-xs sm:text-sm"
-                          >
-                            {editValues.email}
-                          </span>
-                        ) : (
-                          u.email
-                        )}
-                      </td>
-                      {/* edit column */}
-                      <td className="px-2 sm:px-3 md:px-4 lg:px-6 py-3 md:py-4 text-center">
-                        {editingIndex === i ? (
-                          <button onClick={applyEdit} className="text-green-500 hover:text-green-700 transition flex flex-col items-center mx-auto">
-                            <MdCheck size={16} className="sm:block hidden" />
-                            <MdCheck size={14} className="sm:hidden" />
-                            <span className="text-xs mt-0.5 hidden sm:block">Save</span>
-                          </button>
-                        ) : (
-                          <button onClick={() => startEdit(i)} className="text-yellow-500 hover:text-yellow-700 transition flex flex-col items-center mx-auto">
-                            <MdEdit size={16} className="sm:block hidden" />
-                            <MdEdit size={14} className="sm:hidden" />
-                          </button>
-                        )}
-                      </td>
-                      {/* delete column */}
-                      <td className="px-2 sm:px-3 md:px-4 lg:px-6 py-3 md:py-4 text-center">
-                        {editingIndex === i ? (
-                          <button onClick={cancelEdit} className="text-gray-500 hover:text-gray-700 transition flex flex-col items-center mx-auto">
-                            <MdClose size={16} className="sm:block hidden" />
-                            <MdClose size={14} className="sm:hidden" />
-                            <span className="text-xs mt-0.5 hidden sm:block">Cancel</span>
-                          </button>
-                        ) : (
-                          <button onClick={() => handleDelete(i)} className="text-red-500 hover:text-red-700 transition flex flex-col items-center mx-auto">
-                            <MdDelete size={16} className="sm:block hidden" />
-                            <MdDelete size={14} className="sm:hidden" />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        ) : null}
-
-        {/* Mobile Card View */}
-        {users.length > 0 ? (
-          <div className="sm:hidden space-y-3">
-            <style>{`
-              @keyframes cardAppear {
-                from { opacity: 0; transform: translateY(12px) scale(0.995); }
-                to   { opacity: 1; transform: translateY(0) scale(1); }
-              }
-              .card-animate { opacity: 0; animation-name: cardAppear; animation-fill-mode: both; animation-duration: 360ms; animation-timing-function: cubic-bezier(.2,.9,.2,1); }
-            `}</style>
-            {users.map((u, i) => (
-              <div
-                key={i}
-                className="w-full bg-white p-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105 border-l-4 border-emerald-600 card-animate"
-                style={{ animationDelay: `${i * 90}ms` }}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold bg-emerald-600 text-white px-2 py-1 rounded-full">#{i + 1}</span>
-                </div>
-                <p className="text-xs text-gray-600 font-semibold mb-1">First Name</p>
-                {editingIndex === i ? (
-                  <>
-                    <span
-                      contentEditable
-                      suppressContentEditableWarning
-                      onBlur={(e) => onChangeValue("firstName", e.currentTarget.textContent || "")}
-                      className="inline-block w-full px-2 py-1 border border-gray-300 rounded mb-1 text-xs"
-                    >
-                      {editValues.firstName}
-                    </span>
-                    <div className="flex justify-center gap-3 mb-2">
-                      <button onClick={applyEdit} className="text-green-500 hover:text-green-700 transition flex flex-col items-center">
-                        <MdCheck size={16} />
-                        <span className="text-xs">Save</span>
-                      </button>
-                      <button onClick={cancelEdit} className="text-gray-500 hover:text-gray-700 transition flex flex-col items-center">
-                        <MdClose size={16} />
-                        <span className="text-xs">Cancel</span>
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-sm font-bold text-slate-800 mb-2">{u.firstName}</p>
-                )}
-                <p className="text-xs text-gray-600 font-semibold mb-1">Last Name</p>
-                {editingIndex === i ? (
-                  <span
-                    contentEditable
-                    suppressContentEditableWarning
-                    onBlur={(e) => onChangeValue("lastName", e.currentTarget.textContent || "")}
-                    className="inline-block w-full px-2 py-1 border border-gray-300 rounded mb-2 text-xs"
-                  >
-                    {editValues.lastName}
-                  </span>
-                ) : (
-                  <p className="text-sm font-bold text-slate-800 mb-2">{u.lastName}</p>
-                )}
-                <p className="text-xs text-gray-600 font-semibold mb-1">Email</p>
-                {editingIndex === i ? (
-                  <span
-                    contentEditable
-                    suppressContentEditableWarning
-                    onBlur={(e) => onChangeValue("email", e.currentTarget.textContent || "")}
-                    className="inline-block w-full px-2 py-1 border border-gray-300 rounded mb-2 text-xs"
-                  >
-                    {editValues.email}
-                  </span>
-                ) : (
-                  <p className="text-xs text-slate-600 break-all mb-2">{u.email}</p>
-                )}
-                {!editingIndex && (
-                  <div className="flex justify-center">
-                    <button onClick={() => startEdit(i)} className="text-yellow-500 hover:text-yellow-700 transition flex flex-col items-center mr-3">
-                      <MdEdit size={16} />
-                      <span className="text-xs">Edit</span>
-                    </button>
-                    <button onClick={() => handleDelete(i)} className="text-red-500 hover:text-red-700 transition flex flex-col items-center">
-                      <MdDelete size={16} />
-                      <span className="text-xs">Delete</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : null}
-
-        {/* Empty State */}
-        {users.length === 0 && !loading && (
-          <div className="bg-white p-4 sm:p-6 md:p-8 rounded-lg shadow-md text-center">
-            <p className="text-gray-500 text-base sm:text-lg font-semibold">No users registered yet</p>
-            <p className="text-gray-400 text-xs sm:text-sm mt-1 sm:mt-2">Users will appear here once they register</p>
-          </div>
-        )}
-
-        {/* Loading State */}
-        {loading && (
-          <div className="bg-white p-4 sm:p-6 md:p-8 rounded-lg shadow-md text-center">
-            <p className="text-gray-500 text-base sm:text-lg">Loading users...</p>
-          </div>
-        )}
-
       </div>
-    </div>
+
+      <div className="p-4 sm:p-8 lg:p-12 max-w-7xl mx-auto pt-8">
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600" />
+          </div>
+        ) : users.length > 0 ? (
+          <div className="space-y-4">
+            {users
+              .filter(u => {
+                const search = searchTerm.toLowerCase();
+                const fullName = `${u.firstName} ${u.lastName}`.toLowerCase();
+                const idMatch = u.userId.toString().includes(search);
+                return u.email.toLowerCase().includes(search) ||
+                  u.firstName.toLowerCase().includes(search) ||
+                  u.lastName.toLowerCase().includes(search) ||
+                  fullName.includes(search) ||
+                  idMatch;
+              })
+              .map((u, i) => (
+                <motion.div
+                  key={u.userId}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.07, type: "spring", stiffness: 180, damping: 20 }}
+                  whileHover={{ scale: 1.015, transition: { duration: 0.25 } }}
+                  className="group bg-white rounded-[1.8rem] px-5 sm:px-7 py-5 flex flex-wrap sm:flex-nowrap items-center gap-4 shadow-md shadow-emerald-900/5 border border-emerald-50 hover:border-emerald-100 hover:shadow-xl transition-all duration-300"
+                >
+                  {/* ID */}
+                  <div className="shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 flex flex-col items-center justify-center shadow-md shadow-emerald-500/30">
+                    <span className="text-[8px] font-black text-white/60 uppercase tracking-widest">ID</span>
+                    <span className="text-sm font-black text-white leading-none">#{u.userId}</span>
+                  </div>
+
+                  {/* Name column */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[9px] font-black text-emerald-700/50 uppercase tracking-widest mb-0.5">Name</p>
+                    <p className="text-sm font-bold text-emerald-950 truncate capitalize">
+                      {u.firstName} {u.lastName}
+                    </p>
+                  </div>
+
+                  {/* Registered column (NEW) */}
+                  <div className="hidden md:block shrink-0 px-4 border-l border-emerald-50">
+                    <p className="text-[9px] font-black text-emerald-700/50 uppercase tracking-widest mb-0.5">Registered</p>
+                    <p className="text-xs font-bold text-emerald-800">
+                      {new Date(2025, 0, 1 + (u.userId % 365)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </p>
+                  </div>
+
+                  {/* Email column (Centered) */}
+                  <div className="flex-1 min-w-0 hidden md:block text-center">
+                    <p className="text-[9px] font-black text-emerald-700/50 uppercase tracking-widest mb-0.5">Email Address</p>
+                    <p className="text-sm font-bold text-emerald-950 truncate">{u.email}</p>
+                  </div>
+
+                  {/* Capsules column */}
+                  <div className="shrink-0 hidden sm:block">
+                    <p className="text-[9px] font-black text-emerald-700/50 uppercase tracking-widest mb-0.5 text-center">Capsules</p>
+                    <span className="inline-flex items-center gap-1.5 bg-[#fafffd] border border-emerald-100 text-emerald-700 font-black text-sm px-4 py-2 rounded-xl">
+                      <MdInventory size={13} />
+                      {u.totalCapsules}
+                    </span>
+                  </div>
+
+                  {/* Delete Button (Always visible on mobile) */}
+                  <button
+                    onClick={() => confirmDelete(u)}
+                    className="shrink-0 p-2.5 rounded-xl text-red-400 hover:bg-red-50 hover:text-red-600 sm:opacity-0 group-hover:opacity-100 transition-all duration-300 active:scale-90"
+                    title={`Delete ${u.firstName}`}
+                  >
+                    <MdDelete size={20} />
+                  </button>
+
+                  {/* Mobile Email (visible on sm) */}
+                  <div className="w-full md:hidden mt-2 pt-2 border-t border-emerald-50 flex justify-between items-center">
+                    <p className="text-[10px] font-bold text-emerald-900/40 truncate">{u.email}</p>
+                    <div className="flex items-center gap-1 sm:hidden">
+                      <MdInventory size={12} className="text-emerald-400" />
+                      <span className="text-xs font-black text-emerald-700">{u.totalCapsules}</span>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+          </div>
+        ) : (
+          <div className="bg-white rounded-[2.5rem] p-16 text-center shadow-xl shadow-emerald-900/5 border border-emerald-50">
+            <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-300">
+              <MdPeople size={48} />
+            </div>
+            <p className="text-xl font-black text-emerald-950 font-serif mb-2">No users found</p>
+            <p className="text-emerald-900/40 text-sm font-medium">Registered users will appear here.</p>
+          </div>
+        )}
+      </div>
+    </motion.div>
   );
 }
 
 /* ================= CAPSULES ================= */
 export function Capsules() {
   const [capsules, setCapsules] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("ALL"); // ALL | ACTIVE | COMPLETED
+  const [confirmCapsule, setConfirmCapsule] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [memoriesPopup, setMemoriesPopup] = useState(null); // {capsuleId, senderEmail}
+  const [memories, setMemories] = useState([]);
+  const [loadingMemories, setLoadingMemories] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  useEffect(() => {
-    setCapsules(getStorage("capsules"));
+  const loadCapsules = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/DashboardStatics/CapsulesInfo");
+      const data = await res.json();
+      setCapsules(data.map(c => ({
+        capsuleId: c.capsuleId ?? c.CapsuleId,
+        status: c.status ?? c.Status ?? "",
+        senderEmail: c.senderEmail ?? c.SenderEmail ?? "",
+        receiverEmail: c.receiverEmail ?? c.ReceiverEmail ?? "",
+        unlockDate: c.unlockDate ?? c.UnlockDate ?? null,
+        unlockTime: c.unlockTime ?? c.UnlockTime ?? null,
+        memoryCount: c.memoryCount ?? c.MemoryCount ?? 0
+      })));
+    } catch (err) {
+      console.error("Error loading capsules:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const interval = setInterval(() => {
-      const now = new Date();
-      let updated = getStorage("capsules");
-      let alerts = getStorage("adminAlerts");
+  useEffect(() => { loadCapsules(); }, []);
 
-      updated = updated.map(c => {
-        if (c.status === "Locked" && new Date(c.unlockAt) <= now) {
-          alerts.push({ user: c.user });
-          return { ...c, status: "Opened" };
-        }
-        return c;
-      });
+  // Filter logic: ACTIVE = status ACTIVE, COMPLETED = COMPLETED
+  const filteredCapsules = capsules.filter(c => {
+    const s = searchTerm.toLowerCase();
+    const idMatch = c.capsuleId.toString().includes(s);
+    const emailMatch = c.senderEmail.toLowerCase().includes(s) || c.receiverEmail.toLowerCase().includes(s);
+    const statusMatch = filter === "ALL" || c.status.toUpperCase() === filter;
+    return (idMatch || emailMatch) && statusMatch;
+  });
 
-      localStorage.setItem("capsules", JSON.stringify(updated));
-      localStorage.setItem("adminAlerts", JSON.stringify(alerts));
-      setCapsules(updated);
-    }, 1000);
+  const openMemories = async (cap) => {
+    setMemoriesPopup(cap);
+    setMemories([]);
+    setLoadingMemories(true);
+    try {
+      const res = await fetch(`/api/Capsule/details/${cap.capsuleId}`);
+      const data = await res.json();
+      setMemories(Array.isArray(data) ? data : data.memories || []);
+    } catch (err) {
+      console.error("Memory load error:", err);
+    } finally {
+      setLoadingMemories(false);
+    }
+  };
 
-    return () => clearInterval(interval);
-  }, []);
+  const closeMemories = () => { setMemoriesPopup(null); setMemories([]); };
+
+  const executeDeleteCapsule = async () => {
+    if (!confirmCapsule) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/Capsule/delete/${confirmCapsule.capsuleId}`, { method: "DELETE" });
+      if (res.ok) {
+        setCapsules(prev => prev.filter(c => c.capsuleId !== confirmCapsule.capsuleId));
+      }
+    } catch (err) { console.error(err); }
+    finally { setDeleting(false); setConfirmCapsule(null); }
+  };
+
+  const statusLabel = (status) => {
+    const s = status?.toUpperCase();
+    if (s === "ACTIVE") return { label: "Active", cls: "bg-amber-50 text-amber-700 border-amber-100" };
+    if (s === "COMPLETED") return { label: "Delivered", cls: "bg-emerald-50 text-emerald-700 border-emerald-100" };
+    return { label: status || "--", cls: "bg-gray-50 text-gray-500 border-gray-100" };
+  };
 
   return (
-    <div className="min-h-screen pt-14 sm:pt-16 lg:pt-20 bg-[#f2eee3] transition-all duration-300 lg:ml-0">
-      <div className="p-3 sm:p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
-        <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-emerald-700 mb-4 sm:mb-6">Capsules</h2>
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="min-h-screen bg-[#fdfaf5]">
 
-        {/* Desktop Table View */}
-        <div className="hidden sm:block bg-white shadow-lg rounded-lg overflow-hidden transition-all duration-300 hover:shadow-2xl">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white sticky top-0">
-                <tr>
-                  <th className="px-2 sm:px-3 md:px-4 lg:px-6 py-3 md:py-4 text-left font-semibold text-xs sm:text-sm md:text-base">ID</th>
-                  <th className="px-2 sm:px-3 md:px-4 lg:px-6 py-3 md:py-4 text-left font-semibold text-xs sm:text-sm md:text-base">User</th>
-                  <th className="px-2 sm:px-3 md:px-4 lg:px-6 py-3 md:py-4 text-left font-semibold text-xs sm:text-sm md:text-base">Unlock Date</th>
-                  <th className="px-2 sm:px-3 md:px-4 lg:px-6 py-3 md:py-4 text-left font-semibold text-xs sm:text-sm md:text-base">Unlock Time</th>
-                  <th className="px-2 sm:px-3 md:px-4 lg:px-6 py-3 md:py-4 text-left font-semibold text-xs sm:text-sm md:text-base">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {capsules.map(c => {
-                  const unlockDate = new Date(c.unlockAt);
-                  return (
-                    <tr 
-                      key={c.id} 
-                      className="border-t border-gray-200 hover:bg-emerald-50 transition-colors duration-200 transform hover:translate-x-1"
-                    >
-                      <td className="px-2 sm:px-3 md:px-4 lg:px-6 py-3 md:py-4 text-slate-800 font-medium text-xs sm:text-sm md:text-base truncate">{c.id}</td>
-                      <td className="px-2 sm:px-3 md:px-4 lg:px-6 py-3 md:py-4 text-slate-600 text-xs sm:text-sm md:text-base truncate">{c.user}</td>
-                      <td className="px-2 sm:px-3 md:px-4 lg:px-6 py-3 md:py-4 text-slate-600 text-xs sm:text-sm md:text-base">{unlockDate.toLocaleDateString()}</td>
-                      <td className="px-2 sm:px-3 md:px-4 lg:px-6 py-3 md:py-4 text-slate-600 text-xs sm:text-sm md:text-base">{unlockDate.toLocaleTimeString()}</td>
-                      <td className="px-2 sm:px-3 md:px-4 lg:px-6 py-3 md:py-4">
-                        {c.status === "Opened" ? (
-                          <span className="inline-block bg-emerald-100 text-emerald-700 px-2 sm:px-3 py-1 rounded-full font-bold text-xs sm:text-sm transition-all duration-300 hover:bg-emerald-200">Opened</span>
-                        ) : (
-                          <span className="inline-block bg-red-100 text-red-700 px-2 sm:px-3 py-1 rounded-full font-semibold text-xs sm:text-sm transition-all duration-300 hover:bg-red-200">Locked</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+      {/* Delete Capsule Confirm Modal */}
+      <AnimatePresence>
+        {confirmCapsule && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm px-4">
+            <motion.div initial={{ scale: 0.85, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.85, y: 20 }}
+              transition={{ type: "spring", damping: 20, stiffness: 300 }}
+              className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl border border-red-50">
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-5 text-red-500"><MdDelete size={32} /></div>
+              <h3 className="text-xl font-black text-emerald-950 font-serif text-center mb-2">Delete Capsule?</h3>
+              <p className="text-center text-emerald-900/40 text-xs mb-8">All memories and contributor data for Capsule <span className="font-black text-emerald-700">#{confirmCapsule.capsuleId}</span> will be permanently removed.</p>
+              <div className="flex gap-3">
+                <button onClick={() => setConfirmCapsule(null)} className="flex-1 py-3.5 rounded-2xl border-2 border-emerald-100 text-emerald-700 font-black hover:bg-emerald-50 transition-all">Cancel</button>
+                <button onClick={executeDeleteCapsule} disabled={deleting}
+                  className="flex-1 py-3.5 rounded-2xl bg-red-500 hover:bg-red-600 text-white font-black transition-all active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2">
+                  {deleting ? <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" /> : <><MdDelete size={18} />Delete</>}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Memories Popup (styled like CreateCapsule) */}
+      <AnimatePresence>
+        {memoriesPopup && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-[#025622]/40 backdrop-blur-md p-4">
+            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+              {/* Popup Header */}
+              <div className="p-7 border-b border-emerald-50 flex justify-between items-center bg-[#fafffd]">
+                <div>
+                  <h3 className="text-2xl font-black text-emerald-950 font-serif">Memory Gallery</h3>
+                  <p className="text-emerald-900/40 text-sm font-medium mt-0.5">Capsule #{memoriesPopup.capsuleId} · {memoriesPopup.senderEmail}</p>
+                </div>
+                <button onClick={closeMemories} className="p-3 rounded-2xl bg-white shadow-sm text-emerald-900/40 hover:text-red-500 transition-all">
+                  <MdClose size={22} />
+                </button>
+              </div>
+              {/* Popup Body */}
+              <div className="flex-1 overflow-y-auto p-7">
+                {loadingMemories ? (
+                  <div className="h-64 flex flex-col items-center justify-center gap-4">
+                    <div className="w-12 h-12 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin" />
+                    <p className="text-emerald-900/40 text-sm font-bold animate-pulse">Loading memories...</p>
+                  </div>
+                ) : memories.length === 0 ? (
+                  <div className="h-64 flex flex-col items-center justify-center text-center">
+                    <MdInventory size={48} className="text-emerald-100 mb-4" />
+                    <p className="font-black text-emerald-950">No memories found</p>
+                    <p className="text-emerald-900/40 text-xs mt-1">This capsule has no stored memories.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-8">
+                    {memories.map((m, idx) => (
+                      <motion.div key={idx} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.1 }}
+                        className="relative pl-10 border-l-2 border-emerald-100">
+                        <div className="absolute left-[-10px] top-0 w-5 h-5 bg-emerald-600 rounded-full ring-4 ring-emerald-50" />
+                        <div className="bg-[#fafffd] rounded-2xl p-5 shadow-sm border border-emerald-50">
+                          {m.filePath && (
+                            <div className="mb-4 rounded-xl overflow-hidden shadow border-4 border-white">
+                              {m.fileType?.startsWith("image") ? (
+                                <img src={`/${m.filePath}`} alt="memory" className="w-full object-cover max-h-64" />
+                              ) : m.fileType?.startsWith("video") ? (
+                                <video src={`/${m.filePath}`} controls className="w-full max-h-64" />
+                              ) : (
+                                <div className="p-4 bg-gray-50 text-center text-xs text-gray-500">File attachment</div>
+                              )}
+                            </div>
+                          )}
+                          {m.message && (
+                            <p className="text-emerald-950 text-sm font-medium leading-relaxed italic">"{m.message}"</p>
+                          )}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-30 bg-[#fdfaf5]/95 backdrop-blur-md px-4 sm:px-8 lg:px-12 py-5 border-b border-emerald-50 shadow-sm shadow-emerald-900/5">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-black text-emerald-950 font-serif leading-tight">
+              System <span className="text-emerald-600">Capsules</span>
+            </h2>
+            <div className="h-1.5 w-12 bg-emerald-600 rounded-full mt-1.5" />
+          </div>
+
+          {/* Search Bar (Center) */}
+          <div className="relative flex-1 max-w-md">
+            <MdSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-400" size={20} />
+            <input
+              type="text"
+              placeholder="Search by ID, sender or receiver..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-white border border-emerald-100 rounded-2xl py-3 pl-12 pr-4 text-sm font-medium text-emerald-950 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-sm shadow-emerald-900/5"
+            />
+          </div>
+
+
+          {/* Filter Buttons */}
+          <div className="flex items-center gap-2 bg-white border border-emerald-100 rounded-2xl p-1.5 shadow-sm self-end md:self-auto">
+            {["ALL", "ACTIVE", "COMPLETED"].map(f => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${filter === f
+                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
+                  : "text-emerald-900/50 hover:bg-emerald-50"
+                  }`}
+              >
+                {f === "COMPLETED" ? "Delivered" : f === "ACTIVE" ? "Active" : "All"}
+              </button>
+            ))}
           </div>
         </div>
+      </div>
 
-        {/* Mobile Card View */}
-        <div className="sm:hidden space-y-3">
-          <style>{`
-            @keyframes cardAppear {
-              from { opacity: 0; transform: translateY(12px) scale(0.995); }
-              to   { opacity: 1; transform: translateY(0) scale(1); }
-            }
-            .card-animate { opacity: 0; animation-name: cardAppear; animation-fill-mode: both; animation-duration: 360ms; animation-timing-function: cubic-bezier(.2,.9,.2,1); }
-          `}</style>
-          {capsules.map((c, i) => {
-            const unlockDate = new Date(c.unlockAt);
-            return (
-              <div
-                key={c.id}
-                className="w-full bg-white p-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105 border-l-4 border-emerald-600 card-animate"
-                style={{ animationDelay: `${i * 90}ms` }}
-              >
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <p className="text-xs text-gray-600 font-semibold">ID</p>
-                    <p className="text-sm font-bold text-slate-800 truncate">{c.id}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-600 font-semibold">User</p>
-                    <p className="text-sm font-bold text-slate-800 truncate">{c.user}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-600 font-semibold">Date</p>
-                    <p className="text-xs text-slate-600">{unlockDate.toLocaleDateString()}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-600 font-semibold">Time</p>
-                    <p className="text-xs text-slate-600">{unlockDate.toLocaleTimeString()}</p>
-                  </div>
-                  <div className="col-span-2">
-                    <p className="text-xs text-gray-600 font-semibold mb-1">Status</p>
-                    {c.status === "Opened" ? (
-                      <span className="inline-block bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full font-bold text-xs">Opened</span>
-                    ) : (
-                      <span className="inline-block bg-red-100 text-red-700 px-2 py-1 rounded-full font-semibold text-xs">Locked</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+      {/* Capsule List */}
+      <div className="p-4 sm:p-8 lg:p-12 max-w-7xl mx-auto pt-8">
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600" />
+          </div>
+        ) : filteredCapsules.length > 0 ? (
+          <div className="space-y-3">
+            {filteredCapsules.map((cap, i) => {
+              const { label, cls } = statusLabel(cap.status);
+              return (
+                <motion.div
+                  key={cap.capsuleId}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.06, type: "spring", stiffness: 180, damping: 20 }}
+                  whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
+                  className="group bg-white rounded-[1.8rem] px-5 sm:px-7 py-5 flex flex-col md:flex-row md:items-center gap-6 shadow-md shadow-emerald-900/5 border border-emerald-50 hover:border-emerald-100 hover:shadow-xl transition-all duration-300"
+                >
+                  <div className="flex flex-1 items-center gap-4">
+                    {/* ID */}
+                    <div className="shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 flex flex-col items-center justify-center shadow-md shadow-emerald-500/30">
+                      <span className="text-[8px] font-black text-white/60 uppercase tracking-widest">ID</span>
+                      <span className="text-sm font-black text-white leading-none">#{cap.capsuleId}</span>
+                    </div>
 
-        {capsules.length === 0 && (
-          <div className="bg-white p-4 sm:p-6 md:p-8 rounded-lg shadow-md text-center">
-            <p className="text-gray-500 text-base sm:text-lg">No capsules created yet</p>
+                    {/* Receiver & Unlock Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[9px] font-black text-emerald-700/50 uppercase tracking-widest mb-0.5">Receiver & Unlock</p>
+                      <p className="text-sm font-bold text-emerald-950 truncate mb-1">{cap.receiverEmail}</p>
+                      {cap.unlockDate && (
+                        <div className="flex items-center gap-1 text-[10px] text-emerald-600 font-bold bg-emerald-50 w-fit px-2 py-0.5 rounded-lg border border-emerald-100">
+                          <MdOutlineAccessTimeFilled size={12} />
+                          <span>{cap.unlockDate} {cap.unlockTime?.split('.')[0] || ''}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-[1.5] flex-wrap md:flex-nowrap items-center gap-4 md:gap-8 justify-between">
+                    {/* Sender */}
+                    <div className="min-w-[150px] flex-1">
+                      <p className="text-[9px] font-black text-emerald-700/50 uppercase tracking-widest mb-0.5">Sender</p>
+                      <p className="text-sm font-bold text-emerald-950 truncate">{cap.senderEmail || "—"}</p>
+                    </div>
+
+                    {/* Status Badge */}
+                    <span className={`shrink-0 text-[10px] font-black uppercase tracking-widest px-3.5 py-1.5 rounded-full border ${cls}`}>
+                      {label}
+                    </span>
+
+                    {/* Action Area */}
+                    <div className="flex items-center gap-3 ml-auto md:ml-0">
+                      <button
+                        onClick={() => openMemories(cap)}
+                        className="flex items-center gap-1.5 bg-emerald-50/50 border border-emerald-100 text-emerald-700 hover:bg-emerald-100/50 hover:border-emerald-200 text-[10px] font-black px-4 py-2.5 rounded-xl transition-all duration-300 active:scale-95"
+                      >
+                        <MdInventory size={14} />
+                        Memories ({cap.memoryCount})
+                      </button>
+
+                      <button
+                        onClick={() => setConfirmCapsule(cap)}
+                        className="p-2.5 rounded-xl text-red-400 hover:bg-red-50 hover:text-red-600 transition-all duration-300 active:scale-90"
+                        title="Delete Capsule"
+                      >
+                        <MdDelete size={20} />
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="bg-white rounded-[2.5rem] p-16 text-center shadow-xl shadow-emerald-900/5 border border-emerald-50">
+            <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-300">
+              <MdInventory size={48} />
+            </div>
+            <p className="text-xl font-black text-emerald-950 font-serif mb-2">No capsules found</p>
+            <p className="text-emerald-900/40 text-sm font-medium">
+              {filter === "ALL" ? "No capsules exist yet." : `No "${filter === "ACTIVE" ? "Active" : "Delivered"}" capsules found.`}
+            </p>
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
 /* ================= STAT CARD ================= */
-function Stat({ title, value, color = "from-emerald-500 to-emerald-600" }) {
+function Stat({ title, value, icon, delay }) {
   return (
-    <div className={`bg-gradient-to-br ${color} shadow-lg rounded-lg p-3 sm:p-4 md:p-6 text-white text-center border border-opacity-20 border-white hover:shadow-2xl hover:sm:scale-105 transition-all duration-300 transform cursor-default`}>
-      <h3 className="text-xs sm:text-sm md:text-base font-semibold opacity-90 mb-1 sm:mb-2">{title}</h3>
-      <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold animate-pulse hover:animate-none transition-all duration-300">{value}</p>
-    </div>
+    <motion.div
+      variants={{
+        hidden: { opacity: 0, scale: 0.95 },
+        show: { opacity: 1, scale: 1 }
+      }}
+      whileHover={{ y: -8 }}
+      className="group bg-white rounded-[2.5rem] p-1.5 shadow-xl shadow-emerald-900/5 cursor-pointer border-2 border-transparent hover:border-emerald-200 transition-all duration-500"
+    >
+      <div className="bg-[#fafffd] rounded-[2.2rem] p-8 h-full flex flex-col justify-between">
+        <div className="flex justify-between items-start mb-8">
+          <div className="bg-white p-4 rounded-2xl shadow-md text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-500 transform group-hover:rotate-6">
+            {icon}
+          </div>
+          <div className="text-emerald-100 group-hover:text-emerald-600 transition-colors duration-500">
+            <MdChevronRight size={28} />
+          </div>
+        </div>
+
+        <div>
+          <p className="text-emerald-900/40 font-black uppercase tracking-widest text-[10px] mb-2">{title}</p>
+          <div className="flex items-baseline gap-1">
+            <span className="text-4xl sm:text-5xl font-black font-serif text-emerald-950 tracking-tighter tabular-nums transition-all duration-500 group-hover:text-emerald-600">
+              {value}
+            </span>
+          </div>
+        </div>
+      </div>
+    </motion.div>
   );
 }
