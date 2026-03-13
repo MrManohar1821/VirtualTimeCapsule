@@ -252,7 +252,7 @@ export default function CapsuleInput() {
 
   return (
 
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-2 sm:px-4 font-serif font-bold">
+    <div className="min-h-screen bg-[#f8fbfa] flex items-center justify-center p-2 sm:p-4 font-serif font-bold">
 
       {popupMsg && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-white px-4 py-2 rounded-xl shadow border border-green-200 text-[#190E20] z-50 text-sm">
@@ -297,25 +297,26 @@ export default function CapsuleInput() {
         </div>
       )}
 
-      <div className="w-full max-w-4xl bg-white rounded-2xl shadow shadow-[#025622] p-3 sm:p-5 md:p-6 flex flex-col">
-
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b pb-3 mb-4">
-
-          <h1 className="text-base sm:text-lg font-semibold text-[#025622]">
-            Virtual Time Capsule
-          </h1>
-
+      <div className="w-full max-w-4xl bg-white rounded-3xl shadow-xl shadow-green-900/10 p-4 sm:p-8 flex flex-col border border-green-50">
+        <div className="flex items-center justify-between border-b border-green-100 pb-5 mb-6">
+          <div className="flex items-center gap-3">
+             <div className="w-10 h-10 rounded-xl bg-[#9dd1b1] flex items-center justify-center p-1 shadow-sm border border-white">
+                <img src="/src/assets/logo.png" alt="logo" className="w-7 h-7 rounded-full bg-[#025622] object-contain" />
+             </div>
+             <h1 className="text-lg sm:text-xl font-black text-[#025622] tracking-tight uppercase">
+               Capsule <span className="text-[#117f3b]">Design</span>
+             </h1>
+          </div>
           <button
             onClick={saveCapsule}
             disabled={isSaving}
-            className={`self-start sm:self-auto text-sm px-4 py-1.5 ${isSaving ? "bg-gray-300" : "bg-green-200 hover:bg-green-300"} text-[#190E20] rounded-lg shadow transition-colors`}
+            className={`text-xs sm:text-sm px-6 py-2.5 ${isSaving ? "bg-gray-100 text-gray-400" : "bg-[#117f3b] text-white hover:bg-[#025622] shadow-lg shadow-green-900/20"} rounded-xl transition-all font-black uppercase tracking-widest`}
           >
-            {isSaving ? "Saving..." : "Next Memory ➜"}
+            {isSaving ? "Saving..." : "Deliver ➜"}
           </button>
-
         </div>
 
-        <div className="h-52 sm:h-64 md:h-72 overflow-y-auto bg-green-50 rounded-xl p-2 sm:p-3 shadow-inner mb-4">
+        <div className="h-64 sm:h-80 md:h-96 overflow-y-auto bg-[#f8fbfa] rounded-[2rem] p-4 sm:p-6 shadow-inner border border-green-50/50 mb-6 custom-scrollbar">
 
           {messages.map((msg, i) => (
 
@@ -388,13 +389,12 @@ export default function CapsuleInput() {
 
         )}
 
-        <div className="flex flex-wrap items-center gap-2">
-
+        <div className="flex items-center gap-3 p-2 bg-[#f8fbfa] rounded-2xl border border-green-100 shadow-sm">
           <button
             onClick={handleUploadClick}
-            className="p-2 rounded-full bg-green-200 text-[#025622] shadow"
+            className="p-3 rounded-xl bg-white text-[#117f3b] shadow-sm hover:bg-green-50 transition-colors border border-green-100"
           >
-            <Upload size={18} />
+            <Upload size={20} />
           </button>
 
           <input
@@ -408,27 +408,26 @@ export default function CapsuleInput() {
           <button
             onClick={startRecording}
             disabled={recording}
-            className="p-2 rounded-full bg-green-200 text-[#025622] shadow"
+            className="p-3 rounded-xl bg-white text-red-500 shadow-sm hover:bg-red-50 transition-colors border border-red-100"
           >
-            <Video size={18} />
+            <Video size={20} />
           </button>
 
           <input
             type="text"
-            placeholder="Share your thoughts..."
+            placeholder="Write a message to the future..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyPress}
-            className="flex-1 min-w-[180px] p-2 rounded-xl border border-[#025622] focus:outline-none focus:ring-2 focus:ring-green-200"
+            className="flex-1 min-w-[150px] p-3 rounded-xl border-none focus:ring-0 bg-transparent placeholder-green-900/20 text-[#025622] font-medium"
           />
 
           <button
             onClick={handleSend}
-            className="p-2 rounded-full bg-green-200 text-[#025622] shadow"
+            className="p-3 rounded-xl bg-[#117f3b] text-white shadow-md hover:bg-[#025622] transition-colors"
           >
-            <Send size={18} />
+            <Send size={20} />
           </button>
-
         </div>
 
       </div>

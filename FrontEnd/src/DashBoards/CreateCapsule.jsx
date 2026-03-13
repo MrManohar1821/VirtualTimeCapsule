@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { MdHome, MdLogout, MdEmail, MdAccessTime, MdClose, MdDelete, MdFolderOpen, MdCalendarToday } from "react-icons/md";
+import { MdHome, MdLogout, MdEmail, MdAccessTime, MdClose, MdDelete, MdFolderOpen, MdCalendarToday, MdMenu, MdDashboard, MdChevronRight, MdEdit } from "react-icons/md";
 import { IoPersonCircle } from "react-icons/io5";
 import { FaGift, FaImage, FaVideo, FaFilePdf, FaQuoteLeft, FaUserFriends } from "react-icons/fa";
 import { IoIosPeople } from "react-icons/io";
@@ -18,6 +18,8 @@ function CreateCapsule() {
   const [timer, setTimer] = useState(Date.now());
   const [loadingMemories, setLoadingMemories] = useState(false);
   const [loadingCapsules, setLoadingCapsules] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("Dashboard");
 
   /* CUSTOM UI STATES */
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -48,17 +50,30 @@ function CreateCapsule() {
     else setGreeting("Good Night");
   }, []);
 
-  /* PROFILE */
-  useEffect(() => {
-    const user = localStorage.getItem("user");
-    if (user) setProfile(JSON.parse(user));
-  }, []);
-
   /* USERID */
   const getUserId = () => {
     const user = JSON.parse(localStorage.getItem("user"));
-    return user?.id;
+    return user?.id || user?.userId || user?.UserId;
   };
+
+  /* FETCH PROFILE DATA */
+  const fetchProfile = async () => {
+    const uid = getUserId();
+    if (!uid) return;
+    try {
+      const res = await fetch(`/api/Profile/user/${uid}`);
+      if (res.ok) {
+        const data = await res.json();
+        setProfile(data);
+      }
+    } catch (err) {
+      console.error("Profile fetch error:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
 
   /* COUNTDOWN TIMER */
   const getCountdown = (date, time) => {
@@ -191,7 +206,7 @@ function CreateCapsule() {
   /* LOGOUT */
   const handleLogout = () => {
     localStorage.removeItem("user");
-    navigate("/login");
+    navigate("/");
   };
 
   /* SIDEBAR BUTTON */
@@ -209,52 +224,131 @@ function CreateCapsule() {
   );
 
   return (
-    <div className="h-screen flex bg-[#f8fbfa] font-serif overflow-hidden">
-      {/* SIDEBAR */}
-      <aside className="hidden md:flex w-72 bg-white shadow-xl p-6 flex-col h-full border-r border-green-100 z-30">
-        <div className="flex items-center gap-3 mb-10">
-          <div className="w-16 h-16 rounded-full bg-[#9dd1b1] flex items-center justify-center shrink-0 shadow-lg shadow-green-900/10">
-            <img src={logo} alt="logo" className="w-11 h-11 rounded-full bg-[#025622] object-contain p-1" />
+    <div className="h-screen flex bg-[#f8fbfa] font-serif overflow-hidden relative">
+      {/* MOBILE HEADER */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-green-100 flex items-center justify-between px-4 z-50">
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 rounded-full bg-[#9dd1b1] flex items-center justify-center p-1 shadow-md border border-white">
+            <img src={logo} alt="logo" className="w-7 h-7 rounded-full bg-[#025622] object-cover" />
           </div>
-          <h1 className="text-xl font-bold text-[#025622] leading-tight tracking-tight">
-            Virtual Time<br /><span className="text-[#117f3b]">Capsule</span>
-          </h1>
+          <span className="font-serif font-black text-[#025622] text-xs tracking-tight uppercase">Dashboard</span>
+        </div>
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="p-2 text-[#117f3b] hover:bg-green-50 rounded-xl transition-colors"
+        >
+          <MdMenu size={28} />
+        </button>
+      </div>
+
+      {/* MOBILE OVERLAY */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSidebarOpen(false)}
+            className="fixed inset-0 bg-emerald-950/40 backdrop-blur-sm z-[60] md:hidden"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* SIDEBAR */}
+      <motion.aside
+        initial={false}
+        animate={{
+          x: sidebarOpen ? 0 : (window.innerWidth < 768 ? "-100%" : 0),
+          transition: { type: "spring", damping: 25, stiffness: 200 }
+        }}
+        className={`fixed md:relative inset-y-0 left-0 w-72 bg-white shadow-2xl md:shadow-xl p-6 flex flex-col h-full border-r border-green-100 z-[70] md:z-30 overflow-hidden`}
+      >
+        <div className="flex items-center justify-between mb-10">
+          <div className="flex items-center gap-3">
+            <div className="w-16 h-16 rounded-[1.5rem] bg-[#9dd1b1] flex items-center justify-center shrink-0 shadow-lg shadow-green-900/10 border border-white">
+              <img src={logo} alt="logo" className="w-11 h-11 rounded-full bg-[#025622] object-contain p-1" />
+            </div>
+            <div className="flex flex-col">
+              <h1 className="text-xl font-black text-[#025622] leading-tight tracking-tight uppercase">User</h1>
+              <p className="text-[10px] text-[#117f3b] font-bold tracking-widest uppercase opacity-70">Dashboard</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="md:hidden p-2 hover:bg-green-50 rounded-full transition-colors"
+          >
+            <MdClose size={24} className="text-[#117f3b]" />
+          </button>
         </div>
 
-        <nav className="flex flex-col gap-4">
-          <NavButton icon={MdHome} label="Dashboard" onClick={() => navigate("/user")} active={true} />
+        <div className="h-px bg-gradient-to-r from-transparent via-green-200 to-transparent mb-8" />
+
+        <nav className="flex flex-col gap-2">
+          <NavButton icon={MdHome} label="Home" onClick={() => navigate("/")} />
+          <NavButton icon={MdDashboard} label="Dashboard" active={activeTab === "Dashboard"} onClick={() => { setActiveTab("Dashboard"); setSidebarOpen(false); }} />
           <NavButton
             icon={IoPersonCircle}
             label="My Profile"
-            onClick={() => navigate("/user/profile")}
+            active={activeTab === "Profile"}
+            onClick={() => { navigate("/user/profile"); setSidebarOpen(false); }}
           />
           <div className="mt-4 pt-4 border-t border-gray-100">
             <NavButton icon={MdLogout} label="Logout" onClick={handleLogout} />
           </div>
         </nav>
 
-
-      </aside>
+        {/* SIDEBAR FOOTER */}
+        <div className="mt-auto pt-6">
+          <div className="bg-[#f8fbfa] rounded-[1.8rem] p-4 flex items-center gap-4 border border-green-100/50 shadow-inner">
+            <div className="w-10 h-10 rounded-xl bg-[#9dd1b1] flex items-center justify-center overflow-hidden border border-white shadow-sm ring-2 ring-white">
+              {profile?.profileImage ? (
+                <img src={`/${profile.profileImage}`} alt="P" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-lg font-black text-[#025622] uppercase">{profile?.firstName?.charAt(0) || "U"}</span>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-black text-[#025622] truncate">{profile?.firstName || "User"}</p>
+              <p className="text-[10px] font-bold text-[#117f3b] uppercase tracking-widest opacity-60 truncate">Active session</p>
+            </div>
+          </div>
+        </div>
+      </motion.aside>
 
       {/* MAIN */}
-      <main className="flex-1 overflow-y-auto flex flex-col relative">
-        <div className="sticky top-0 bg-[#f8fbfa]/80 backdrop-blur-md z-20 px-8 py-6 border-b border-green-100 flex justify-between items-center shadow-sm">
+      <main className="flex-1 overflow-y-auto flex flex-col relative w-full mt-16 md:mt-0">
+        <div className="sticky top-0 bg-[#f8fbfa]/80 backdrop-blur-md z-20 px-4 sm:px-8 py-4 sm:py-6 border-b border-green-100 flex justify-between items-center shadow-sm">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">
+            <h2 className="text-xl sm:text-2xl font-black text-emerald-950 font-serif leading-tight">
               {greeting}, <span className="text-[#117f3b]">{profile ? profile.firstName : "User"}</span>
             </h2>
-            <p className="text-gray-500 text-sm font-medium mt-1">Experience your memories through time.</p>
+            <p className="text-gray-500 text-[10px] sm:text-xs font-bold tracking-wide uppercase opacity-60 mt-0.5 sm:mt-1">Experience your memories through time.</p>
           </div>
-          <div className="flex items-center gap-4">
-
-            <div className="w-10 h-10 rounded-full border-2 border-[#117f3b] p-0.5 shadow-sm">
-              <img src={profile?.profileImage || logo} alt="P" className="w-full h-full rounded-full object-cover bg-green-100" />
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex flex-col items-end mr-1">
+              <span className="text-xs font-black text-[#025622] leading-none uppercase tracking-tight">Access Token</span>
+              <span className="text-[10px] font-bold text-[#117f3b] uppercase tracking-widest opacity-60">Verified User</span>
+            </div>
+            <div
+              onClick={() => navigate("/user/profile")}
+              className="group cursor-pointer relative w-10 h-10 sm:w-12 sm:h-12 rounded-[1.2rem] bg-[#9dd1b1] flex items-center justify-center shadow-lg border-2 border-white hover:scale-105 transition-all active:scale-95 overflow-hidden ring-1 ring-[#9dd1b1]/20"
+            >
+              {profile?.profileImage ? (
+                <img src={`/${profile.profileImage}`} alt="profile" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-lg sm:text-xl font-black text-[#025622] uppercase">
+                  {profile?.firstName?.charAt(0) || "U"}
+                </span>
+              )}
+              <div className="absolute inset-0 bg-emerald-950/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                <MdEdit className="text-white" size={18} />
+              </div>
             </div>
           </div>
         </div>
 
         {/* CONTENT */}
-        <div className="p-8">
+        <div className="p-4 sm:p-8">
           {loadingCapsules ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
               {[1, 2, 3].map((i) => (
@@ -381,7 +475,7 @@ function CreateCapsule() {
                 className="bg-white rounded-[40px] shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col relative"
               >
                 {/* MODAL HEADER */}
-                <div className="p-8 border-b border-green-50 flex justify-between items-center bg-[#f8fbfa]">
+                <div className="p-5 sm:p-8 border-b border-green-50 flex justify-between items-center bg-[#f8fbfa]">
                   <div>
                     <h3 className="text-2xl font-bold text-[#025622]">
                       {selectedCapsule?.firstName ? `${selectedCapsule.firstName}'s Memories` : 'Memory Gallery'}
@@ -397,7 +491,7 @@ function CreateCapsule() {
                 </div>
 
                 {/* MODAL CONTENT */}
-                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto p-4 sm:p-8 custom-scrollbar">
                   {loadingMemories ? (
                     <div className="h-64 flex flex-col items-center justify-center">
                       <div className="w-12 h-12 border-4 border-green-100 border-t-[#117f3b] rounded-full animate-spin"></div>

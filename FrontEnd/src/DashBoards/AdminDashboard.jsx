@@ -306,7 +306,7 @@ export function Topbar() {
           <h2 className="text-lg lg:text-xl font-black text-emerald-900 font-serif hidden sm:block">
             Manage <span className="text-emerald-600">Overview</span>
           </h2>
-          <span className="hidden md:inline-flex items-center px-4 py-1.5 bg-white border-2 border-emerald-100 rounded-xl text-xs font-black text-emerald-800 tracking-widest uppercase">
+          <span className="hidden md:inline-flex items-center px-4 py-1.5 bg-white rounded-xl text-xs font-black text-emerald-800 tracking-widest uppercase">
             [ {JSON.parse(localStorage.getItem("user"))?.firstName || "ADMIN"} ]
           </span>
         </div>
