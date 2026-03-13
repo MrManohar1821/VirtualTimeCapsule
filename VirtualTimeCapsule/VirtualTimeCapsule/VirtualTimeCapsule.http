@@ -1,0 +1,6 @@
+@VirtualTimeCapsule_HostAddress = http://localhost:5152
+
+GET {{VirtualTimeCapsule_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

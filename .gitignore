@@ -1,0 +1,33 @@
+# Git Ignore for Virtual Time Capsule (Frontend & Backend)
+
+# Build/Dist
+bin/
+obj/
+dist/
+build/
+.vs/
+.vscode/
+
+# Dependencies
+node_modules/
+packages/
+
+# Environment/Secrets
+.env
+.env.local
+.env.*.local
+appsettings.Development.json
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
