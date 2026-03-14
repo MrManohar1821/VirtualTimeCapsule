@@ -5,6 +5,7 @@ import axios from "axios";
 import logo from "../assets/logo.png";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { API_BASE_URL } from "../config";
+import PremiumToast from "../components/PremiumToast";
 
 export default function LoginForm() {
   const navigate = useNavigate();
@@ -107,16 +108,12 @@ export default function LoginForm() {
     <div className="min-h-screen flex items-center justify-center bg-[#f2eee3] px-4 font-serif font-bold">
 
       {/* Toast */}
-      {toast.show && (
-        <div
-          className={`fixed top-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 ${toast.type === "success"
-              ? "bg-[#7cc99b] text-white"
-              : "bg-red-400 text-white"
-            }`}
-        >
-          {toast.message}
-        </div>
-      )}
+      <PremiumToast 
+        show={toast.show} 
+        message={toast.message} 
+        type={toast.type}
+        onClose={() => setToast(prev => ({ ...prev, show: false }))} 
+      />
 
       <div className="w-full max-w-md bg-white rounded-2xl shadow-md p-8 shadow-[#9dd1b1]">
 

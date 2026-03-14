@@ -7,6 +7,7 @@ import {
 } from "react-icons/md";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "../assets/logo.png";
+import PremiumToast from "../components/PremiumToast";
 
 /* ================= UTIL ================= */
 const getStorage = (key, fallback = []) => {
@@ -335,29 +336,12 @@ export function Topbar() {
       </header>
 
       {/* Notifications Portal */}
-      <AnimatePresence>
-        {alert && (
-          <motion.div
-            initial={{ opacity: 0, y: -20, x: 20 }}
-            animate={{ opacity: 1, y: 0, x: 0 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="fixed top-4 right-4 sm:top-24 sm:right-8 bg-emerald-900 text-white p-4 rounded-2xl shadow-2xl z-[80] flex items-center gap-4 border border-emerald-700/50 max-w-[calc(100vw-2rem)] sm:max-w-md pointer-events-auto"
-          >
-            <div className="w-10 h-10 rounded-xl bg-emerald-800 flex items-center justify-center text-emerald-300 shadow-inner">
-              <MdNotifications size={24} className="animate-bounce" />
-            </div>
-            <div className="flex-1">
-              <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-0.5">System Alert</p>
-              <p className="text-sm font-bold text-emerald-50 leading-tight">
-                Capsule unlocked for user <span className="text-emerald-300">@{alert.user}</span>
-              </p>
-            </div>
-            <button onClick={() => setAlert(null)} className="p-1 hover:bg-white/10 rounded-lg transition-colors">
-              <MdClose size={20} />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <PremiumToast 
+        show={!!alert} 
+        message={alert ? `Capsule unlocked for user @${alert.user}` : ""} 
+        type="success"
+        onClose={() => setAlert(null)} 
+      />
     </>
   );
 }
@@ -443,6 +427,7 @@ export function Users() {
   const [confirmTarget, setConfirmTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
 
   const loadUsers = async () => {
     try {
@@ -483,6 +468,7 @@ export function Users() {
       });
       if (response.ok) {
         setUsers(prev => prev.filter(u => u.userId !== confirmTarget.userId));
+        setToast({ show: true, message: "USER DELETED SUCCESSFULLY", type: "success" });
       } else {
         console.error("Failed to delete user.");
       }
@@ -511,6 +497,13 @@ export function Users() {
       animate={{ opacity: 1, y: 0 }}
       className="min-h-screen bg-[#fdfaf5]"
     >
+      <PremiumToast 
+        show={toast.show} 
+        message={toast.message} 
+        type={toast.type}
+        onClose={() => setToast(prev => ({ ...prev, show: false }))} 
+      />
+
       {/* Confirm Delete Modal */}
       <AnimatePresence>
         {confirmTarget && (
@@ -681,6 +674,7 @@ export function Capsules() {
   const [memories, setMemories] = useState([]);
   const [loadingMemories, setLoadingMemories] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
 
   const loadCapsules = async () => {
     try {
@@ -738,6 +732,7 @@ export function Capsules() {
       const res = await fetch(`/api/Capsule/delete/${confirmCapsule.capsuleId}`, { method: "DELETE" });
       if (res.ok) {
         setCapsules(prev => prev.filter(c => c.capsuleId !== confirmCapsule.capsuleId));
+        setToast({ show: true, message: "CAPSULE DELETED SUCCESSFULLY", type: "success" });
       }
     } catch (err) { console.error(err); }
     finally { setDeleting(false); setConfirmCapsule(null); }
@@ -752,6 +747,13 @@ export function Capsules() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="min-h-screen bg-[#fdfaf5]">
+      
+      <PremiumToast 
+        show={toast.show} 
+        message={toast.message} 
+        type={toast.type}
+        onClose={() => setToast(prev => ({ ...prev, show: false }))} 
+      />
 
       {/* Delete Capsule Confirm Modal */}
       <AnimatePresence>

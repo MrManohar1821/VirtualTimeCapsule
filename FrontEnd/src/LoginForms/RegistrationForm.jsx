@@ -5,6 +5,7 @@ import axios from "axios";
 import logo from "../assets/logo.png";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { API_BASE_URL } from "../config";
+import PremiumToast from "../components/PremiumToast";
 
 export default function RegistrationForm() {
   const [firstName, setFirstName] = useState("");
@@ -12,10 +13,9 @@ export default function RegistrationForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [toast, setToast] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: "", type: "error" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // OTP State
@@ -26,39 +26,31 @@ export default function RegistrationForm() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!error) return;
-    const timer = setTimeout(() => setError(""), 3000);
+    if (!toast.show) return;
+    const timer = setTimeout(() => setToast(prev => ({ ...prev, show: false })), 3000);
     return () => clearTimeout(timer);
-  }, [error]);
-
-  useEffect(() => {
-    if (!toast) return;
-    const timer = setTimeout(() => setToast(false), 2000);
-    return () => clearTimeout(timer);
-  }, [toast]);
+  }, [toast.show]);
 
   // Handle Register Button Click (Sends OTP)
   const handleRegister = async (e) => {
     e.preventDefault();
-    setError("");
+    setToast({ ...toast, show: false });
 
     if (!firstName || !lastName || !email || !password || !confirmPassword)
-      return setError("All fields are required");
+      return setToast({ show: true, message: "All fields are required", type: "error" });
 
     const emailRegex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
     if (!emailRegex.test(email.toLowerCase()))
-      return setError("Email must be valid");
+      return setToast({ show: true, message: "Email must be valid", type: "error" });
 
     const passwordRegex =
       /^(?=.*[0-9])(?=.*[!@#$%^&*])[A-Za-z0-9!@#$%^&*]{6,15}$/;
 
     if (!passwordRegex.test(password))
-      return setError(
-        "Password must be 6-15 characters with 1 number & 1 special character"
-      );
+      return setToast({ show: true, message: "Password must be 6-15 characters with 1 number & 1 special character", type: "error" });
 
     if (password !== confirmPassword)
-      return setError("Passwords do not match");
+      return setToast({ show: true, message: "Passwords do not match", type: "error" });
 
     setIsSubmitting(true);
 
@@ -81,7 +73,7 @@ export default function RegistrationForm() {
         (typeof err.response?.data === "string" ? err.response.data : null) ||
         err.response?.data?.title ||
         "Failed to send OTP. Please try again.";
-      setError(message);
+      setToast({ show: true, message: message, type: "error" });
     } finally {
       setIsSubmitting(false);
     }
@@ -90,11 +82,11 @@ export default function RegistrationForm() {
   // Handle OTP Verification and Final Registration
   const handleVerifyOtp = async () => {
     if (!otp || otp.length !== 6) {
-      return setError("Please enter a valid 6-digit OTP");
+      return setToast({ show: true, message: "Please enter a valid 6-digit OTP", type: "error" });
     }
 
     setIsVerifying(true);
-    setError("");
+    setToast({ ...toast, show: false });
 
     try {
       const registrationData = {
@@ -113,8 +105,8 @@ export default function RegistrationForm() {
 
       if (response.status === 200) {
         setShowOtpPopup(false);
-        setToast(true);
-        setTimeout(() => navigate("/login"), 2000);
+        setToast({ show: true, message: "Registered successfully. Please login.", type: "success" });
+        setTimeout(() => navigate("/login"), 3000);
       }
 
     } catch (err) {
@@ -123,7 +115,7 @@ export default function RegistrationForm() {
         (typeof err.response?.data === "string" ? err.response.data : null) ||
         err.response?.data?.title ||
         "Registration Failed. Invalid OTP.";
-      setError(message);
+      setToast({ show: true, message: message, type: "error" });
     } finally {
       setIsVerifying(false);
     }
@@ -132,17 +124,12 @@ export default function RegistrationForm() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f2eee3] px-4 font-serif font-bold">
 
-      {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-[#117f3b] text-white px-6 py-3 rounded-lg shadow-lg z-50">
-          Registered successfully. Please login.
-        </div>
-      )}
-
-      {error && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
-          {error}
-        </div>
-      )}
+      <PremiumToast 
+        show={toast.show} 
+        message={toast.message} 
+        type={toast.type}
+        onClose={() => setToast(prev => ({ ...prev, show: false }))} 
+      />
 
       <div className="w-full max-w-md bg-white rounded-2xl p-8 shadow-md shadow-[#9dd1b1]">
         <div className="flex justify-center mb-6">

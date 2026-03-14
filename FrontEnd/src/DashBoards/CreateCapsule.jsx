@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "../assets/logo.png";
 import { API_BASE_URL } from "../config";
+import PremiumToast from "../components/PremiumToast";
 
 function CreateCapsule() {
   const [greeting, setGreeting] = useState("");
@@ -631,21 +632,12 @@ function CreateCapsule() {
           )}
         </AnimatePresence>
 
-        {/* CUSTOM TOAST NOTIFICATION */}
-        <AnimatePresence>
-          {toast.show && (
-            <motion.div
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 50 }}
-              className={`fixed bottom-10 left-1/2 -translate-x-1/2 z-[300] px-6 py-3 rounded-2xl shadow-xl flex items-center gap-3 border ${toast.type === "success" ? "bg-white border-green-100 text-[#117f3b]" : "bg-white border-red-100 text-red-500"
-                }`}
-            >
-              <div className={`w-2 h-2 rounded-full ${toast.type === "success" ? "bg-[#117f3b]" : "bg-red-500"}`}></div>
-              <span className="font-bold text-sm tracking-tight">{toast.message}</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <PremiumToast
+          show={toast.show}
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(prev => ({ ...prev, show: false }))}
+        />
       </main>
     </div>
   );

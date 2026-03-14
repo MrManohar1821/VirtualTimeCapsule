@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 
 import { API_BASE_URL } from "../config";
+import PremiumToast from "../components/PremiumToast";
 
 function ProfileCard() {
   const API = `${API_BASE_URL}/api`;
@@ -20,7 +21,7 @@ function ProfileCard() {
     phone: ""
   });
 
-  const [toast, setToast] = useState("");
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
@@ -138,47 +139,41 @@ function ProfileCard() {
       });
 
       setIsEditing(false);
-      setToast("✅ Profile updated successfully");
-      setTimeout(() => setToast(""), 3000);
+      setToast({ show: true, message: "✅ Profile updated successfully", type: "success" });
+      setTimeout(() => setToast(prev => ({ ...prev, show: false })), 3000);
       loadProfile();
     } catch (err) {
       console.error("Update error:", err);
-      setToast("❌ Failed to update profile");
-      setTimeout(() => setToast(""), 3000);
+      setToast({ show: true, message: "❌ Failed to update profile", type: "error" });
+      setTimeout(() => setToast(prev => ({ ...prev, show: false })), 3000);
     }
   };
 
   const handleEdit = () => setIsEditing(true);
 
   return (
-    <div className="min-h-screen w-full bg-[#f8fbfa] relative flex flex-col items-center justify-center p-4 sm:p-6 font-serif overflow-y-auto overflow-x-hidden">
+    <div className="min-h-screen w-full bg-[#f2eee3] relative flex flex-col items-center justify-center p-4 sm:p-6 font-serif overflow-y-auto overflow-x-hidden">
       {/* BACKGROUND DECORATIONS (SUBTLE) */}
-      <div className="fixed top-[-5%] left-[-2%] w-48 h-48 bg-green-100/40 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="fixed bottom-[-5%] right-[-2%] w-64 h-64 bg-emerald-100/30 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-100/30 rounded-full blur-[120px] pointer-events-none" />
+      <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-green-100/30 rounded-full blur-[120px] pointer-events-none" />
 
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed top-10 left-1/2 -translate-x-1/2 bg-white px-6 py-3 rounded-2xl shadow-xl border border-green-100 text-[#117f3b] z-[100] font-bold text-xs uppercase tracking-widest"
-          >
-            {toast}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <PremiumToast
+        show={toast.show}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast(prev => ({ ...prev, show: false }))}
+      />
 
       <div className="w-full max-w-xl flex flex-col items-center gap-4 py-6">
-        
+
         {/* Profile Card Container */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-[2.8rem] p-1 shadow-2xl shadow-green-900/5 w-full border border-green-100/30"
+          className="bg-white rounded-2xl shadow-md p-1 shadow-[#9dd1b1] w-full border border-[#9dd1b1]/30"
         >
-          <div className="bg-[#f8fbfa] rounded-[2.5rem] p-6 sm:p-10 flex flex-col items-center">
-            
+          <div className="bg-white rounded-2xl p-6 sm:p-10 flex flex-col items-center">
+
             {/* Navigation & Header Section (Aligned) */}
             <div className="w-full mb-8">
               {/* Integrated Button Header for Desktop/iPad */}
@@ -222,7 +217,7 @@ function ProfileCard() {
                   Your <span className="text-[#117f3b]">Profile</span>
                 </h1>
                 <div className="h-0.5 w-8 bg-[#9dd1b1] mx-auto rounded-full mb-2 opacity-60"></div>
-                <p className="text-gray-400 text-[8px] uppercase tracking-[0.2em] font-black opacity-50">Identity Management</p>
+                <p className="text-gray-500 text-[8px] uppercase tracking-[0.2em] font-black opacity-50">Identity Management</p>
               </div>
             </div>
 
@@ -231,11 +226,10 @@ function ProfileCard() {
               <motion.div
                 whileHover={isEditing ? { scale: 1.05 } : {}}
                 onClick={handleClick}
-                className={`w-28 h-28 sm:w-32 sm:h-32 rounded-[2.2rem] overflow-hidden border-[4px] bg-white flex items-center justify-center shadow-xl transition-all duration-300 ${
-                  isEditing 
-                    ? "cursor-pointer border-[#9dd1b1] ring-8 ring-green-100/20" 
-                    : "border-white"
-                }`}
+                className={`w-28 h-28 sm:w-32 sm:h-32 rounded-[2.2rem] overflow-hidden border-[4px] bg-white flex items-center justify-center shadow-xl transition-all duration-300 ${isEditing
+                  ? "cursor-pointer border-[#9dd1b1] ring-8 ring-green-100/20"
+                  : "border-white"
+                  }`}
               >
                 {image ? (
                   <img
@@ -274,53 +268,58 @@ function ProfileCard() {
             <form className="w-full space-y-4 px-2" onSubmit={handleSave}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[8px] font-black text-[#117f3b] uppercase tracking-widest pl-2 opacity-80">First Name</label>
+                  <label className="text-[10px] font-black text-[#201229] uppercase tracking-widest pl-2 opacity-100">First Name</label>
                   <input
                     name="firstName"
                     placeholder="First Name"
                     value={profileData.firstName}
                     onChange={handleChange}
                     disabled={!isEditing}
-                    className="w-full bg-white p-2.5 border border-green-50 rounded-xl focus:outline-none focus:ring-4 focus:ring-[#117f3b]/5 text-[#025622] font-black text-[11px] transition-all"
+                    className="w-full bg-white px-4 py-2 border-2 border-[#9dd1b1] rounded-lg focus:outline-none focus:ring-4 focus:ring-[#117f3b]/5 text-[#025622] font-serif font-bold text-base transition-all"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[8px] font-black text-[#117f3b] uppercase tracking-widest pl-2 opacity-80">Last Name</label>
+                  <label className="text-[10px] font-black text-[#201229] uppercase tracking-widest pl-2 opacity-100">Last Name</label>
                   <input
                     name="lastName"
                     placeholder="Last Name"
                     value={profileData.lastName}
                     onChange={handleChange}
                     disabled={!isEditing}
-                    className="w-full bg-white p-2.5 border border-green-50 rounded-xl focus:outline-none focus:ring-4 focus:ring-[#117f3b]/5 text-[#025622] font-black text-[11px] transition-all"
+                    className="w-full bg-white px-4 py-2 border-2 border-[#9dd1b1] rounded-lg focus:outline-none focus:ring-4 focus:ring-[#117f3b]/5 text-[#025622] font-serif font-bold text-base transition-all"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[8px] font-black text-[#117f3b] uppercase tracking-widest pl-2 opacity-80">Email Address</label>
+                <label className="text-[10px] font-black text-[#201229] uppercase tracking-widest pl-2 opacity-100">Email Address</label>
                 <input
                   name="email"
                   value={profileData.email}
                   disabled
-                  className="w-full bg-gray-100/50 p-2.5 border border-gray-100 rounded-xl text-gray-400 font-bold text-[11px] cursor-not-allowed italic"
+                  className="w-full bg-white px-4 py-2 border-2 border-[#9dd1b1] rounded-lg text-[#025622] font-serif font-bold text-base cursor-not-allowed "
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[8px] font-black text-[#117f3b] uppercase tracking-widest pl-2 opacity-80">Mobile Number</label>
+                <label className="text-[10px] font-black text-[#201229] uppercase tracking-widest pl-2 opacity-100">Mobile Number</label>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300 font-black text-[11px] font-serif">+91</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 font-bold text-base font-serif">+91</span>
                   <input
                     name="phone"
                     value={profileData.phone.replace("+91", "")}
                     onChange={handleChange}
                     placeholder="XXXXXXXXXX"
                     disabled={!isEditing}
-                    className="w-full bg-white p-2.5 pl-12 border border-green-50 rounded-xl focus:outline-none focus:ring-4 focus:ring-[#117f3b]/5 text-[#025622] font-black text-[11px] transition-all"
+                    className="w-full bg-white px-4 py-2 pl-12 border-2 border-[#9dd1b1] rounded-lg focus:outline-none focus:ring-4 focus:ring-[#117f3b]/5 text-[#025622] font-serif font-bold text-base transition-all"
                   />
                 </div>
               </div>
+
+              {/* Branding Note */}
+              <p className="text-[7px] font-bold text-[#117f3b] uppercase tracking-[0.3em] opacity-30 mt-4 text-center">
+                Virtual Time Capsule © Secure Identity
+              </p>
 
               {isEditing && (
                 <motion.div
@@ -331,7 +330,7 @@ function ProfileCard() {
                   <button
                     type="button"
                     onClick={() => setIsEditing(false)}
-                    className="flex-1 py-3 rounded-xl font-black text-[8px] uppercase tracking-widest text-gray-400 hover:bg-white transition-all border border-transparent hover:border-gray-100"
+                    className="flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest text-[#201229] hover:bg-white transition-all border border-gray-300"
                   >
                     Cancel
                   </button>
@@ -346,11 +345,7 @@ function ProfileCard() {
             </form>
           </div>
         </motion.div>
-        
-        {/* Footer Note */}
-        <p className="text-[7px] font-bold text-[#117f3b] uppercase tracking-[0.3em] opacity-20 mt-4 text-center">
-          Virtual Time Capsule © Secure Identity
-        </p>
+
       </div>
     </div>
   );
