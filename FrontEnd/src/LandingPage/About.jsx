@@ -144,27 +144,27 @@ const About = () => {
         </div>
         <div className="flex flex-wrap justify-center mt-10 gap-6 text-gray-900 text-sm">
 
-            <div className="flex items-center gap-2">
-              <VscWorkspaceTrusted className="text-amber-600 text-lg" />
-              Encrypted & Private
-            </div>
-
-            <div className="flex items-center gap-2">
-              <RiGitRepositoryPrivateLine className="text-amber-600 text-lg" />
-              You Control Delivery
-            </div>
-
-            <div className="flex items-center gap-2">
-              <FiAward className="text-amber-600 text-lg" />
-              WCAG-AA Accessible
-            </div>
-
+          <div className="flex items-center gap-2">
+            <VscWorkspaceTrusted className="text-amber-600 text-lg" />
+            Encrypted & Private
           </div>
 
-          <div className="mt-6 flex justify-center items-center gap-2 text-gray-900 text-sm">
-            
-            Alzheimer's Association Partner (Pending)
+          <div className="flex items-center gap-2">
+            <RiGitRepositoryPrivateLine className="text-amber-600 text-lg" />
+            You Control Delivery
           </div>
+
+          <div className="flex items-center gap-2">
+            <FiAward className="text-amber-600 text-lg" />
+            WCAG-AA Accessible
+          </div>
+
+        </div>
+
+        <div className="mt-6 flex justify-center items-center gap-2 text-gray-900 text-sm">
+
+          Alzheimer's Association Partner (Pending)
+        </div>
 
       </div>
 
