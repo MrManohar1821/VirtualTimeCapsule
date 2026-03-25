@@ -153,6 +153,69 @@ public class RegistrationController : ControllerBase
         });
     }
 
+    // FORGOT PASSWORD - SEND OTP
+    [HttpPost("ForgotPassword")]
+    public async Task<IActionResult> ForgotPassword([FromBody] RegistrationClass model)
+    {
+        if (model == null || string.IsNullOrEmpty(model.Email))
+            return BadRequest("Invalid email.");
+
+        string email = model.Email.Trim().ToLower();
+
+        // Check if user exists
+        BLRegistration bl = new BLRegistration();
+        var existingUser = bl.GetUserByEmail(email);
+        if (existingUser == null)
+            return BadRequest(new { message = "Email not found" });
+
+        // Generate 6-digit OTP
+        string otp = new Random().Next(100000, 999999).ToString();
+        _otpStorage[email] = otp;
+
+        try
+        {
+            string subject = "Your OTP for Password Reset";
+            string body = $"<h3>Password Reset Request</h3><p>Your OTP for resetting your password is: <b>{otp}</b></p><p>This OTP is valid for 10 minutes.</p>";
+
+            await _emailService.SendEmailAsync(email, subject, body);
+            return Ok(new { message = "OTP sent successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send reset OTP to {Email}", email);
+            return StatusCode(500, $"Error sending email: {ex.Message}");
+        }
+    }
+
+    // RESET PASSWORD - VERIFY OTP & UPDATE
+    [HttpPost("ResetPassword")]
+    public IActionResult ResetPassword([FromBody] RegistrationClass model)
+    {
+        if (model == null || string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.Password) || string.IsNullOrEmpty(model.Otp))
+            return BadRequest("Invalid data.");
+
+        model.Email = model.Email.Trim().ToLower();
+        model.Password = model.Password.Trim();
+
+        // Verify OTP
+        if (!_otpStorage.TryGetValue(model.Email, out string storedOtp) || storedOtp != model.Otp)
+        {
+            return BadRequest(new { message = "Invalid or expired OTP" });
+        }
+
+        BLRegistration bl = new BLRegistration();
+        bool result = bl.UpdatePassword(model.Email, model.Password);
+
+        if (result)
+        {
+            // Remove OTP after successful reset
+            _otpStorage.TryRemove(model.Email, out _);
+            return Ok(new { message = "Password updated successfully" });
+        }
+
+        return BadRequest(new { message = "Failed to update password" });
+    }
+
     // LOGOUT CONTROLLER
     [HttpPost("Logout")]
     public IActionResult Logout()

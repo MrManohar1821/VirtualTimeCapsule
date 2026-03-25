@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data;
 using VirtualTimeCapsule.DataLayer;
 using VirtualTimeCapsule.Models;
@@ -43,6 +43,36 @@ namespace VirtualTimeCapsule.BusinessLayer
             catch (Exception)
             {
                 return false; // Fail only if exception occurs
+            }
+        }
+
+        // UPDATE PASSWORD API
+        public bool UpdatePassword(string email, string newPassword)
+        {
+            try
+            {
+                string query = "UPDATE REGISTRATION SET PASSWORD = @Password WHERE LOWER(EMAIL) = LOWER(@Email)";
+
+                // Hash password
+                string hashedPassword = BCrypt.Net.BCrypt.HashPassword(newPassword.Trim());
+
+                SqlParameter[] parameters =
+                {
+                    new SqlParameter("@Email", email.Trim()),
+                    new SqlParameter("@Password", hashedPassword)
+                };
+
+                int rowsAffected = sqlConnectionObj.ExecuteNonQuery(
+                    query,
+                    CommandType.Text,
+                    parameters
+                );
+
+                return rowsAffected > 0;
+            }
+            catch (Exception)
+            {
+                return false;
             }
         }
 
