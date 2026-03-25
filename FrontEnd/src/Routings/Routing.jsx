@@ -13,6 +13,9 @@ import PageNotFound from "../DashBoards/PageNotFound";
 
 // Landing page
 import HomePage from "../LandingPage/HomePage";
+import PrivacyPolicy from "../LandingPage/PrivacyPolicy";
+import FAQ from "../LandingPage/FAQ";
+import About from "../LandingPage/About";
 
 // Login & Registration
 import LoginForm from "../LoginForms/LoginForm";
@@ -73,6 +76,11 @@ export default function Routing() {
 
           {/* Registration */}
           <Route path="/register" element={<RegistrationForm />} />
+
+          {/* New Landing Pages */}
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/about" element={<About />} />
 
           {/* ==================== ADMIN ROUTES ==================== */}
           <Route path="/admin" element={<ProtectedAdmin />}>
